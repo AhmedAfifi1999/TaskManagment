@@ -16,7 +16,13 @@ class Project extends Model
      *
      */
     protected $fillable = [
-        'name', 'color',
+        'name',
+        'description',
+        'color',
+        'user_id',
+        'status',
+        'start_date',
+        'end_date',
     ];
 
     /**
@@ -62,5 +68,20 @@ class Project extends Model
     public function deleteProject()
     {
         return $this->delete();
+    }
+
+    public function creator()
+    {
+        return $this->belongsTo(User::class, 'user_id');
+    }
+
+    public function team()
+    {
+        return $this->belongsToMany(User::class, 'project_user');
+    }
+
+    public function tasks()
+    {
+        return $this->hasMany(Task::class, 'project');
     }
 }

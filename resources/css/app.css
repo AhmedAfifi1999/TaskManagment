@@ -1,0 +1,21 @@
+
+
+@import "../../public/cp/assets/vendor/fonts/fontawesome.css";
+@import "../../public/cp/assets/vendor/fonts/tabler-icons.css";
+@import "../../public/cp/assets/vendor/fonts/flag-icons.css";
+
+@import "../../public/cp/assets/vendor/css/rtl/core.css";
+@import "../../public/cp/assets/vendor/css/rtl/theme-default.css";
+
+@import "../../public/cp/assets/css/demo.css";
+
+@import "../../public/cp/assets/vendor/libs/node-waves/node-waves.css";
+@import "../../public/cp/assets/vendor/libs/perfect-scrollbar/perfect-scrollbar.css";
+@import "../../public/cp/assets/vendor/libs/typeahead-js/typeahead.css";
+@import "../../public/cp/assets/vendor/libs/apex-charts/apex-charts.css";
+@import "../../public/cp/assets/vendor/libs/select2/select2.css";
+@import "../../public/cp/assets/vendor/libs/flatpickr/flatpickr.css";
+@import "../../public/cp/assets/vendor/libs/tagify/tagify.css";
+@import "../../public/cp/assets/vendor/libs/@form-validation/form-validation.css";
+@import "../../public/cp/assets/vendor/libs/bootstrap-select/bootstrap-select.css";
+@import "../../public/cp/assets/vendor/libs/sweetalert2/sweetalert2.css";

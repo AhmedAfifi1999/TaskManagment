@@ -15,7 +15,15 @@ class Task extends Model
      *
      */
     protected $fillable = [
-        'project', 'name', 'priority', 'is_completed'
+        'project',
+        'name',
+        'priority',
+        'is_completed',
+        'status',
+        'description',
+        'start_time',
+        'end_time',
+        'user_id '
     ];
 
     /**
@@ -92,5 +100,15 @@ class Task extends Model
     public function deleteTask()
     {
         return $this->delete();
+    }
+
+    public function assignedUsers()
+    {
+        return $this->belongsToMany(User::class, 'task_user');
+    }
+
+    public function user()
+    {
+        return $this->belongsTo(User::class, 'user_id');
     }
 }
