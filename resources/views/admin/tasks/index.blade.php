@@ -51,13 +51,17 @@
 
                                             <td>
                                                 <div class="d-flex align-items-center">
-                                                    <img src="{{ $task->user->image ? asset($task->user->image) : asset('cp/assets/img/avatars/1.png') }}"
-                                                        alt="Avatar" class="rounded-circle me-2" width="30"
-                                                        height="30">
-                                                    <span>{{ $task->user->name }}</span>
+                                                    @if ($task->user)
+                                                        <img src="{{ $task->user->image ? asset($task->user->image) : asset('cp/assets/img/avatars/1.png') }}"
+                                                            alt="Avatar" class="rounded-circle me-2" width="30"
+                                                            height="30">
+                                                        <span>{{ $task->user->name }}</span>
+                                                    @else
+                                                        <span class="text-muted">No assigned user</span>
+                                                    @endif
                                                 </div>
                                             </td>
-                                       
+
                                             <td>
                                                 <select class="form-select status-select" data-task-id="{{ $task->id }}"
                                                     style="width: 140px">
@@ -385,5 +389,12 @@
     .filter-btn.active {
         border-color: #696cff;
         background-color: rgba(105, 108, 255, 0.1);
+    }
+
+    .swal2-popup .swal2-deny {
+        display: none !important;
+        visibility: hidden !important;
+        opacity: 0 !important;
+        pointer-events: none !important;
     }
 </style>

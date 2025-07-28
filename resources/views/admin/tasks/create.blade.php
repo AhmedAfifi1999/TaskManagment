@@ -5,74 +5,88 @@
         <div class="row mb-6">
             <div class="col-md">
                 <div class="card">
-                    <h5 class="card-header">إضافة مشروع جديد</h5>
+                    <h5 class="card-header d-flex justify-content-between align-items-center"
+                        style="border-right: 5px solid {{ $project->color }};">
+                        إضافة مهمة جديدة للمشروع: {{ $project->name }}
+                        <a href="{{ route('admin.projects.tasks.index', $project->id) }}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left me-2"></i>العودة للقائمة
+                        </a>
+                    </h5>
                     <div class="card-body">
-                        <form method="POST" action="{{ route('admin.projects.store') }}" enctype="multipart/form-data"
-                            class="needs-validation" novalidate>
+                        <form method="POST" action="{{ route('admin.projects.tasks.store', $project->id) }}"
+                            enctype="multipart/form-data" class="needs-validation" novalidate>
                             @csrf
 
-                            <!-- اسم المشروع ولونه -->
+                            <!-- معلومات أساسية -->
                             <div class="row mb-3">
                                 <div class="col-md-8">
-                                    <label class="form-label" for="name">اسم المشروع</label>
+                                    <label class="form-label" for="name">عنوان المهمة</label>
                                     <input type="text" class="form-control" id="name" name="name"
-                                        placeholder="اسم المشروع" required>
-                                    <div class="invalid-feedback">يرجى إدخال اسم المشروع</div>
+                                        placeholder="عنوان المهمة" required>
+                                    <div class="invalid-feedback">يرجى إدخال عنوان المهمة</div>
                                 </div>
 
                                 <div class="col-md-4">
-                                    <label class="form-label" for="color">لون المشروع</label>
-                                    <input type="color" class="form-control form-control-color" id="color"
-                                        name="color" value="#7367f0" title="اختر لون المشروع" style="width:95%">
+                                    <label class="form-label" for="priority">الأولوية</label>
+                                    <select class="form-select" id="priority" name="priority" required>
+                                        @for ($i = 1; $i <= 10; $i++)
+                                            <option value="{{ $i }}" {{ $i == 5 ? 'selected' : '' }}>
+                                                {{ $i }} -
+                                                {{ $i == 1 ? 'أعلى أولوية' : ($i == 10 ? 'أقل أولوية' : '') }}
+                                            </option>
+                                        @endfor
+                                    </select>
                                 </div>
                             </div>
 
-                            <!-- وصف المشروع -->
+                            <!-- وصف المهمة -->
                             <div class="mb-3">
-                                <label class="form-label" for="description">وصف المشروع</label>
-                                <textarea class="form-control" id="description" name="description" rows="3" placeholder="وصف المشروع (اختياري)"></textarea>
+                                <label class="form-label" for="description">وصف المهمة</label>
+                                <textarea class="form-control" id="description" name="description" rows="3"
+                                    placeholder="وصف تفصيلي للمهمة (اختياري)"></textarea>
                             </div>
 
-                            <!-- تواريخ المشروع -->
-                            <div class="row mb-3">
-                                <div class="col-md-6">
-                                    <label class="form-label" for="start_date">تاريخ البدء</label>
-                                    <input type="date" class="form-control" id="start_date" name="start_date" required>
-                                    <div class="invalid-feedback">يرجى تحديد تاريخ البدء</div>
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label" for="end_date">تاريخ الانتهاء</label>
-                                    <input type="date" class="form-control" id="end_date" name="end_date">
-                                </div>
-                            </div>
-
-                            <!-- حالة المشروع -->
+                            <!-- المسؤول عن المهمة -->
                             <div class="mb-3">
-                                <label class="form-label" for="status">حالة المشروع</label>
-                                <select class="form-select" id="status" name="status" required>
-                                    <option value="NOT_STARTED" selected>لم يبدأ بعد</option>
-                                    <option value="IN_PROGRESS">قيد التنفيذ</option>
-                                    <option value="COMPLETED">مكتمل</option>
-                                    <option value="ON_HOLD">معلق</option>
-                                    <option value="DELAYED">متأخر</option>
-                                </select>
-                                <div class="invalid-feedback">يرجى تحديد حالة المشروع</div>
-                            </div>
-
-                            <!-- فريق العمل -->
-                            <div class="mb-3">
-                                <label for="team" class="form-label">فريق العمل</label>
-                                <select id="team" name="team[]" class="select2 form-select" multiple required>
-                                    @foreach ($users as $user)
+                                <label class="form-label" for="user_id">المسؤول عن المهمة</label>
+                                <select class="form-select" id="user_id" name="user_id" required>
+                                    <option value="">اختر المسؤول</option>
+                                    @foreach ($project->team as $user)
                                         <option value="{{ $user->id }}">{{ $user->name }}</option>
                                     @endforeach
                                 </select>
-                                <div class="invalid-feedback">يرجى تحديد فريق العمل</div>
+                                <div class="invalid-feedback">يرجى تحديد المسؤول عن المهمة</div>
+                            </div>
+
+                            <!-- تواريخ المهمة -->
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label class="form-label" for="start_time">تاريخ البدء</label>
+                                    <input type="datetime-local" class="form-control" id="start_time" name="start_time"
+                                        required>
+                                    <div class="invalid-feedback">يرجى تحديد تاريخ البدء</div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label" for="end_time">تاريخ الانتهاء</label>
+                                    <input type="datetime-local" class="form-control" id="end_time" name="end_time">
+                                </div>
+                            </div>
+
+                            <!-- حالة المهمة -->
+                            <div class="mb-3">
+                                <label class="form-label" for="status">حالة المهمة</label>
+                                <select class="form-select" id="status" name="status">
+                                    <option value="not_started" selected>لم تبدأ بعد</option>
+                                    <option value="in_progress">قيد التنفيذ</option>
+                                    <option value="completed">مكتملة</option>
+                                </select>
                             </div>
 
                             <!-- زر الإرسال -->
                             <div class="text-end">
-                                <button type="submit" class="btn btn-primary">إضافة المشروع</button>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-save me-2"></i>حفظ المهمة
+                                </button>
                             </div>
                         </form>
                     </div>
@@ -82,35 +96,33 @@
     </div>
 @endsection
 
-@section('scripts')
-    <script>
-        $(document).ready(function() {
-            // التحقق من أن تاريخ الانتهاء بعد تاريخ البدء
-            $('#start_date, #end_date').change(function() {
-                const startDate = new Date($('#start_date').val());
-                const endDate = new Date($('#end_date').val());
+<script>
+    $(document).ready(function() {
+        // التحقق من أن تاريخ الانتهاء بعد تاريخ البدء
+        $('#start_time, #end_time').change(function() {
+            const startTime = new Date($('#start_time').val());
+            const endTime = new Date($('#end_time').val());
 
-                if (startDate && endDate && endDate < startDate) {
-                    alert('تاريخ الانتهاء يجب أن يكون بعد تاريخ البدء');
-                    $('#end_date').val('');
-                }
-            });
-
-            // التحقق من الصحة
-            (function() {
-                'use strict'
-                var forms = document.querySelectorAll('.needs-validation')
-                Array.prototype.slice.call(forms)
-                    .forEach(function(form) {
-                        form.addEventListener('submit', function(event) {
-                            if (!form.checkValidity()) {
-                                event.preventDefault()
-                                event.stopPropagation()
-                            }
-                            form.classList.add('was-validated')
-                        }, false)
-                    })
-            })();
+            if (startTime && endTime && endTime < startTime) {
+                alert('تاريخ الانتهاء يجب أن يكون بعد تاريخ البدء');
+                $('#end_time').val('');
+            }
         });
-    </script>
-@endsection
+
+        // التحقق من الصحة
+        (function() {
+            'use strict'
+            var forms = document.querySelectorAll('.needs-validation')
+            Array.prototype.slice.call(forms)
+                .forEach(function(form) {
+                    form.addEventListener('submit', function(event) {
+                        if (!form.checkValidity()) {
+                            event.preventDefault()
+                            event.stopPropagation()
+                        }
+                        form.classList.add('was-validated')
+                    }, false)
+                })
+        })();
+    });
+</script>
