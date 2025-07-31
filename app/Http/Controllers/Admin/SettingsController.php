@@ -7,6 +7,7 @@ use App\Models\Setting;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Hash;
 
@@ -16,6 +17,7 @@ class SettingsController extends Controller
     public function edit()
     {
         $settings = Setting::first(); // الحصول على الإعدادات الحالية
+
         return view('admin.settings.setting', compact('settings'));
     }
 
@@ -106,13 +108,11 @@ class SettingsController extends Controller
      */
     public function update(Request $request)
     {
-        // التحقق من صحة البيانات
-        $request->validate([
+        // Validate data
+        $validated = $request->validate([
             'site_name' => 'required|string|max:255',
             'site_logo' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
             'site_description' => 'required|string',
-            'is_maintenance_mode' => 'nullable|boolean',
-            'maintenance_message' => 'nullable|string',
             'site_email' => 'nullable|email',
             'site_phone' => 'nullable|string',
             'site_address' => 'nullable|string',
@@ -121,40 +121,43 @@ class SettingsController extends Controller
             'instagram_link' => 'nullable|url',
             'linkedin_link' => 'nullable|url',
             'youtube_link' => 'nullable|url',
+            'is_maintenance_mode' => 'required|in:0,1',
+            'maintenance_message' => 'nullable|string',
         ]);
 
-        // الحصول على الإعدادات الحالية أو إنشاء جديدة إذا لم توجد
-        $settings = Setting::firstOrNew([]);
+        DB::beginTransaction();
 
-        // تحديث البيانات
-        $settings->fill([
-            'site_name' => $request->site_name,
-            'site_description' => $request->site_description,
-            'site_email' => $request->site_email,
-            'site_phone' => $request->site_phone,
-            'site_address' => $request->site_address,
-            'facebook_link' => $request->facebook_link,
-            'twitter_link' => $request->twitter_link,
-            'instagram_link' => $request->instagram_link,
-            'linkedin_link' => $request->linkedin_link,
-            'youtube_link' => $request->youtube_link,
-            'is_maintenance_mode' => $request->has('is_maintenance_mode'),
-            'maintenance_message' => $request->maintenance_message,
-        ]);
+        try {
+            $maintenanceMode = (int)$request->input('is_maintenance_mode', 0);
 
-        if ($request->hasFile('site_logo')) {
-            if ($settings->site_logo) {
-                Storage::disk('public')->delete($settings->site_logo);
+            $settings = Setting::firstOrNew([]);
+
+            // Handle checkbox input
+            if ($request->hasFile('site_logo')) {
+                if ($settings->site_logo) {
+                    Storage::disk('public')->delete($settings->site_logo);
+                }
+
+                $imagePath = $request->file('site_logo')->store('settings', 'public');
+                $settings->site_logo = $imagePath;
             }
 
-            $imagePath = $request->file('site_logo')->store('settings', 'public');
-            $settings->site_logo = $imagePath;
+
+            // Update all fields
+            $settings->fill($validated);
+            $settings->is_maintenance_mode = $maintenanceMode;
+            // dd($settings->is_maintenance_mode);
+
+            $settings->save();
+
+            DB::commit();
+
+            return redirect()->route('admin.settings.edit')
+                ->with('success', 'تم تحديث الإعدادات بنجاح');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->withInput()
+                ->with('error', 'حدث خطأ أثناء حفظ الإعدادات: ' . $e->getMessage());
         }
-
-        // حفظ التعديلات
-        $settings->save();
-
-        // إعادة التوجيه مع رسالة نجاح
-        return redirect()->route('admin.settings.edit')->with('success', 'تم تحديث الإعدادات بنجاح.');
     }
 }

@@ -65,12 +65,12 @@
                                 <div class="mb-4 col-md-6">
                                     <label for="sitePhone" class="form-label">رقم الهاتف للموقع</label>
                                     <input class="form-control" type="text" id="sitePhone" name="site_phone"
-                                        value="{{ $settings->site_phone ?? '+123456789' }}" placeholder="رقم الهاتف" />
+                                        value="{{ $settings->site_phone }}" placeholder="رقم الهاتف" />
                                 </div>
                                 <div class="mb-4 col-md-6">
                                     <label for="siteAddress" class="form-label">عنوان الموقع</label>
                                     <input class="form-control" type="text" id="siteAddress" name="site_address"
-                                        value="{{ $settings->site_address ?? 'غزة الرمال' }}"
+                                        value="{{ $settings->site_address }}"
                                         placeholder="غزة الرمال الباب الشمالي للسرايا" />
                                 </div>
                                 <div class="mb-4 col-md-6">
@@ -108,14 +108,20 @@
                                 <div class="mb-4 col-md-6">
                                     <label for="is_maintenance_mode" class="form-label">حالة الموقع</label>
                                     <div class="form-check form-switch">
+                                        <!-- Hidden input لضمان إرسال 0 إذا كان غير محدد -->
+                                        <input type="hidden" name="is_maintenance_mode" value="0">
+
+                                        <!-- Checkbox يرسل 1 إذا تم تفعيله -->
                                         <input class="form-check-input" type="checkbox" id="is_maintenance_mode"
-                                            name="is_maintenance_mode"
+                                            name="is_maintenance_mode" value="1"
                                             {{ old('is_maintenance_mode', $settings->is_maintenance_mode ?? false) ? 'checked' : '' }}>
                                         <label class="form-check-label" for="is_maintenance_mode">وضع الصيانة</label>
                                     </div>
                                     <small class="form-text text-muted">تفعيل هذا الخيار سيضع الموقع في وضع
                                         الصيانة.</small>
                                 </div>
+
+
                                 {{-- رسالة الصيانة --}}
                                 <div class="mb-4 col-md-12">
                                     <label for="maintenance_message" class="form-label">رسالة الصيانة</label>

@@ -10,7 +10,7 @@ use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\ProjectController;
 use App\Http\Controllers\Admin\ProjectTaskController;
 use App\Http\Controllers\Admin\SettingsController;
-
+use App\Http\Controllers\Website\MainController;
 
 // Route::get('/', [HomeController::class, 'index'])->name('home.index');
 
@@ -18,17 +18,11 @@ use App\Http\Controllers\Admin\SettingsController;
 Route::post('/login', [AuthController::class, 'login'])->name('login');
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 Route::get('/login', [AuthController::class, 'loginPage'])->name('login.form');
-
-Route::get('/', function () {
-    return view('website.index');
-});
+Route::get('/', [MainController::class, 'index'])->name('main');
 
 Route::prefix('admin')->name('admin.')->middleware('auth')->group(function () {
     // Route::prefix('admin')->name('admin.')->group(function () {
     // 
-    // Route::get('/', function () {
-    //     return view('admin.dashboard');
-    // })->name('dashboard');
     Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
 
     Route::get('/management', [HomeController::class, 'index'])->name('management');
