@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Models\Setting;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use App\Models\User;
@@ -13,6 +14,12 @@ class AuthController extends Controller
 {
     //
 
+    public function loginPage()
+    {
+        $website = Setting::select('site_name', 'site_logo')->first();
+        // dd($website->site_name);
+    return view('auth.login', compact('website'));
+    }
     public function login(Request $request)
     {
         // التحقق من البيانات
@@ -41,7 +48,7 @@ class AuthController extends Controller
                 $request->session()->regenerate(); // تجديد session لمنع هجمات fixation
                 return redirect()->intended('/admin')->with('success', 'تم تسجيل الدخول بنجاح!'); // رسالة نجاح
             } else {
-                  dd('test wrong');
+                dd('test wrong');
 
                 // إذا كان المستخدم غير مفعل أو محظور
                 Auth::logout(); // تسجيل الخروج
@@ -63,5 +70,4 @@ class AuthController extends Controller
 
         return redirect('/')->with('success', 'تم تسجيل الخروج بنجاح!'); // رسالة نجاح
     }
-
 }

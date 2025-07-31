@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\DashboardController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ProjectsController;
 use App\Http\Controllers\HomeController;
@@ -8,28 +9,27 @@ use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\ProjectController;
 use App\Http\Controllers\Admin\ProjectTaskController;
+use App\Http\Controllers\Admin\SettingsController;
 
 
-Route::get('/', [HomeController::class, 'index'])->name('home.index');
+// Route::get('/', [HomeController::class, 'index'])->name('home.index');
 
 
 Route::post('/login', [AuthController::class, 'login'])->name('login');
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
-Route::get('/login', function () {
-    return view('auth.login');
-})->name('login.form');
+Route::get('/login', [AuthController::class, 'loginPage'])->name('login.form');
 
-
-Route::get('/aa', function () {
-    return view('admin.dashboard');
-})->name('dashboard');
+Route::get('/', function () {
+    return view('website.index');
+});
 
 Route::prefix('admin')->name('admin.')->middleware('auth')->group(function () {
     // Route::prefix('admin')->name('admin.')->group(function () {
     // 
-    Route::get('/', function () {
-        return view('admin.dashboard');
-    })->name('dashboard');
+    // Route::get('/', function () {
+    //     return view('admin.dashboard');
+    // })->name('dashboard');
+    Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
 
     Route::get('/management', [HomeController::class, 'index'])->name('management');
 
@@ -61,6 +61,17 @@ Route::prefix('admin')->name('admin.')->middleware('auth')->group(function () {
             Route::post('reorder', [ProjectTaskController::class, 'reorder'])->name('reorder');
             Route::post('{task}/status', [ProjectTaskController::class, 'status'])->name('status');
         });
+    });
+
+    Route::prefix('settings')->name('settings.')->group(function () {
+        Route::get('/edit', [SettingsController::class, 'edit'])->name('edit');
+        Route::post('/update', [SettingsController::class, 'update'])->name('update');
+        Route::get('/account', [SettingsController::class, 'account'])->name('account');
+        Route::post('/account', [SettingsController::class, 'accountUpdate'])->name('accountUpdate');
+//---
+        Route::get('/security', [SettingsController::class, 'security'])->name('security');
+        Route::post('/changePassword', [SettingsController::class, 'changePassword'])->name('changePassword');
+
     });
 });
 

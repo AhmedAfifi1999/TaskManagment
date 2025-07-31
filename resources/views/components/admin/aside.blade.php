@@ -45,14 +45,7 @@
 
 
 
-
-
-
-        <!-- الثوابت -->
-        <li class="menu-header small">
-            <span class="menu-header-text" data-i18n="الثوابت">الثوابت</span>
-        </li>
-       <!-- المشاريع -->
+        <!-- المشاريع -->
         <li class="menu-header small">
             <span class="menu-header-text" data-i18n="المشاريع">المشاريع</span>
         </li>
@@ -87,17 +80,39 @@
             </a>
         </li>
 
-        <!-- الإعدادات -->
+
         <li class="menu-header small">
             <span class="menu-header-text" data-i18n="الإعدادات">الإعدادات</span>
         </li>
-        <li class="menu-item {{ request()->routeIs('admin.settings.edit') ? 'active' : '' }}">
-            <a href="#" class="menu-link">
-                <i class="menu-icon tf-icons ti ti-settings"></i>
-                <div data-i18n="الإعدادات">الإعدادات</div>
-            </a>
-        </li>
 
+        <li
+            class="menu-item {{ request()->routeIs('admin.settings.edit') ||
+            request()->routeIs('admin.settings.account') ||
+            request()->routeIs('admin.settings.security')
+                ? 'active open'
+                : '' }}">
+            <a href="javascript:void(0);" class="menu-link menu-toggle">
+                <i class="menu-icon ti ti-settings"></i> <!-- أيقونة الإعدادات -->
+                <div>الإعدادات</div>
+            </a>
+            <ul class="menu-sub">
+                <li class="menu-item  {{ request()->routeIs('admin.settings.edit') ? 'active' : '' }}">
+                    <a href="{{ route('admin.settings.edit') }}" class="menu-link">
+                        <div>اعدادات الموقع</div>
+                    </a>
+                </li>
+                <li class="menu-item {{ request()->routeIs('admin.settings.account') ? 'active' : '' }}">
+                    <a href="{{ route('admin.settings.account') }}" class="menu-link">
+                        <div>اعدادات الحساب</div>
+                    </a>
+                </li>
+                <li class="menu-item {{ request()->routeIs('admin.settings.security') ? 'active' : '' }}">
+                    <a href="{{ route('admin.settings.security') }}" class="menu-link">
+                        <div>الحماية</div>
+                    </a>
+                </li>
+            </ul>
+        </li>
         <!-- تسجيل الخروج -->
         <li class="menu-item">
             <form method="POST" action="{{ route('logout') }}">

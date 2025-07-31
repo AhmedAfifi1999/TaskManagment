@@ -5,7 +5,8 @@
         <div class="row mb-4">
             <div class="col-12">
                 <div class="card">
-                    <h5 class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="card-header d-flex justify-content-between align-items-center"
+                        style="border-right: 5px solid {{ $project->color }};">
                         جميع مهام المشروع: {{ $project->name }}
                         <div>
                             <a href="{{ route('admin.projects.tasks.create', $project->id) }}" class="btn btn-primary">
