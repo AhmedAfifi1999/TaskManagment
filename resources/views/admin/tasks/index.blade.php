@@ -28,150 +28,204 @@
                                     data-status="completed">مكتملة</button>
                             </div>
                         </div>
+                    </div>
+                    <!-- جدول المهام مع إمكانية السحب -->
+                    <div class="table-responsive">
+                        <table class="table table-hover" id="tasks-table">
+                            <thead>
+                                <tr>
+                                    <th width="50px">#</th>
+                                    <th>اسم المهمة</th>
+                                    <th>المسؤول</th>
+                                    <th>الحالة</th>
+                                    <th>المواعيد</th>
+                                    <th>الإجراءات</th>
+                                </tr>
+                            </thead>
+                            <tbody id="sortable-tasks">
+                                @foreach ($tasks as $task)
+                                    <tr class="task-row" data-task-id="{{ $task->id }}"
+                                        data-status="{{ $task->status }}">
+                                        <td>{{ ($tasks->currentPage() - 1) * $tasks->perPage() + $loop->iteration }}
+                                        </td>
+                                        <td><strong>{{ $task->name }}</strong></td>
 
-                        <!-- جدول المهام مع إمكانية السحب -->
-                        <div class="table-responsive">
-                            <table class="table table-hover" id="tasks-table">
-                                <thead>
-                                    <tr>
-                                        <th width="50px">#</th>
-                                        <th>اسم المهمة</th>
-                                        <th>المسؤول</th>
-                                        <th>الحالة</th>
-                                        <th>المواعيد</th>
-                                        <th>الإجراءات</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="sortable-tasks">
-                                    @foreach ($project->tasks->sortBy('order') as $task)
-                                        <tr class="task-row" data-task-id="{{ $task->id }}"
-                                            data-status="{{ $task->status }}">
-                                            <!-- باقي محتوى الصف -->
-                                            <td>{{ $loop->iteration }}</td>
-                                            <td><strong>{{ $task->name }}</strong></td>
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                @if ($task->user)
+                                                    <img src="{{ $task->user->image ? asset($task->user->image) : asset('cp/assets/img/avatars/1.png') }}"
+                                                        alt="Avatar" class="rounded-circle me-2" width="30"
+                                                        height="30">
+                                                    <span>{{ $task->user->name }}</span>
+                                                @else
+                                                    <span class="text-muted">No assigned user</span>
+                                                @endif
+                                            </div>
+                                        </td>
 
-                                            <td>
-                                                <div class="d-flex align-items-center">
-                                                    @if ($task->user)
-                                                        <img src="{{ $task->user->image ? asset($task->user->image) : asset('cp/assets/img/avatars/1.png') }}"
-                                                            alt="Avatar" class="rounded-circle me-2" width="30"
-                                                            height="30">
-                                                        <span>{{ $task->user->name }}</span>
-                                                    @else
-                                                        <span class="text-muted">No assigned user</span>
-                                                    @endif
-                                                </div>
-                                            </td>
+                                        <td>
+                                            <select class="form-select status-select" data-task-id="{{ $task->id }}"
+                                                style="width: 140px">
+                                                <option value="not_started"
+                                                    {{ $task->status == 'not_started' ? 'selected' : '' }}>لم تبدأ
+                                                </option>
+                                                <option value="in_progress"
+                                                    {{ $task->status == 'in_progress' ? 'selected' : '' }}>قيد التنفيذ
+                                                </option>
+                                                <option value="completed"
+                                                    {{ $task->status == 'completed' ? 'selected' : '' }}>مكتملة
+                                                </option>
+                                            </select>
+                                        </td>
+                                        <td>
+                                            <div class="small">
+                                                @php
+                                                    // حساب نسبة التقدم
+                                                    $progressPercentage = 0;
+                                                    $progressColor = 'secondary';
 
-                                            <td>
-                                                <select class="form-select status-select" data-task-id="{{ $task->id }}"
-                                                    style="width: 140px">
-                                                    <option value="not_started"
-                                                        {{ $task->status == 'not_started' ? 'selected' : '' }}>لم تبدأ
-                                                    </option>
-                                                    <option value="in_progress"
-                                                        {{ $task->status == 'in_progress' ? 'selected' : '' }}>قيد التنفيذ
-                                                    </option>
-                                                    <option value="completed"
-                                                        {{ $task->status == 'completed' ? 'selected' : '' }}>مكتملة
-                                                    </option>
-                                                </select>
-                                            </td>
-                                            <td>
-                                                <div class="small">
-                                                    @php
-                                                        // حساب نسبة التقدم
-                                                        $progressPercentage = 0;
-                                                        $progressColor = 'secondary';
+                                                    if ($task->start_time && $task->end_time) {
+                                                        $now = now();
+                                                        $start = \Carbon\Carbon::parse($task->start_time);
+                                                        $end = \Carbon\Carbon::parse($task->end_time);
 
-                                                        if ($task->start_time && $task->end_time) {
-                                                            $now = now();
-                                                            $start = \Carbon\Carbon::parse($task->start_time);
-                                                            $end = \Carbon\Carbon::parse($task->end_time);
-
-                                                            if ($now->greaterThanOrEqualTo($start)) {
-                                                                if ($now->greaterThanOrEqualTo($end)) {
-                                                                    $progressPercentage = 100;
-                                                                } else {
-                                                                    $totalDuration = $end->diffInSeconds($start);
-                                                                    $elapsed = $now->diffInSeconds($start);
-                                                                    $progressPercentage = min(
-                                                                        100,
-                                                                        round(($elapsed / $totalDuration) * 100),
-                                                                    );
-                                                                }
-                                                            }
-
-                                                            // تحديد لون الشريط حسب النسبة
-                                                            if ($progressPercentage >= 80) {
-                                                                $progressColor = 'danger';
-                                                            } elseif ($progressPercentage >= 50) {
-                                                                $progressColor = 'warning';
+                                                        if ($now->greaterThanOrEqualTo($start)) {
+                                                            if ($now->greaterThanOrEqualTo($end)) {
+                                                                $progressPercentage = 100;
                                                             } else {
-                                                                $progressColor = 'success';
+                                                                $totalDuration = $end->diffInSeconds($start);
+                                                                $elapsed = $now->diffInSeconds($start);
+                                                                $progressPercentage = min(
+                                                                    100,
+                                                                    round(($elapsed / $totalDuration) * 100),
+                                                                );
                                                             }
                                                         }
-                                                    @endphp
 
-                                                    <div class="mb-2">
-                                                        <div class="d-flex justify-content-between mb-1">
-                                                            <span><i class="far fa-calendar-alt me-2"></i> بداية:
-                                                                {{ $task->start_time ? \Carbon\Carbon::parse($task->start_time)->format('Y-m-d') : 'غير محدد' }}
-                                                            </span>
-                                                            <span class="text-muted">{{ $progressPercentage }}%</span>
-                                                        </div>
+                                                        // تحديد لون الشريط حسب النسبة
+                                                        if ($progressPercentage >= 80) {
+                                                            $progressColor = 'danger';
+                                                        } elseif ($progressPercentage >= 50) {
+                                                            $progressColor = 'warning';
+                                                        } else {
+                                                            $progressColor = 'success';
+                                                        }
+                                                    }
+                                                @endphp
 
-                                                        <div class="progress" style="height: 6px;">
-                                                            <div class="progress-bar bg-{{ $progressColor }}"
-                                                                role="progressbar"
-                                                                style="width: {{ $progressPercentage }}%"
-                                                                aria-valuenow="{{ $progressPercentage }}" aria-valuemin="0"
-                                                                aria-valuemax="100"></div>
-                                                        </div>
+                                                <div class="mb-2">
+                                                    <div class="d-flex justify-content-between mb-1">
+                                                        <span><i class="far fa-calendar-alt me-2"></i> بداية:
+                                                            {{ $task->start_time ? \Carbon\Carbon::parse($task->start_time)->format('Y-m-d') : 'غير محدد' }}
+                                                        </span>
+                                                        <span class="text-muted">{{ $progressPercentage }}%</span>
+                                                    </div>
 
-                                                        <div class=" mt-1">
-                                                            <span><i class="far fa-calendar-alt me-2"></i> نهاية:
-                                                                {{ $task->end_time ? \Carbon\Carbon::parse($task->end_time)->format('Y-m-d') : 'غير محدد' }}
-                                                            </span>
-                                                        </div>
+                                                    <div class="progress" style="height: 6px;">
+                                                        <div class="progress-bar bg-{{ $progressColor }}"
+                                                            role="progressbar" style="width: {{ $progressPercentage }}%"
+                                                            aria-valuenow="{{ $progressPercentage }}" aria-valuemin="0"
+                                                            aria-valuemax="100"></div>
+                                                    </div>
+
+                                                    <div class=" mt-1">
+                                                        <span><i class="far fa-calendar-alt me-2"></i> نهاية:
+                                                            {{ $task->end_time ? \Carbon\Carbon::parse($task->end_time)->format('Y-m-d') : 'غير محدد' }}
+                                                        </span>
                                                     </div>
                                                 </div>
-                                            </td>
-                                            <td>
-                                                <div class="dropdown">
-                                                    <button class="btn p-0" type="button" data-bs-toggle="dropdown">
-                                                        <i class="fas fa-ellipsis-v"></i>
-                                                    </button>
-                                                    <ul class="dropdown-menu">
-                                                        <li>
-                                                            <a class="dropdown-item"
-                                                                href="{{ route('admin.projects.tasks.edit', ['project' => $project->id, 'task' => $task->id]) }}">
-                                                                <i class="fas fa-edit me-2"></i> تعديل
-                                                            </a>
-                                                        </li>
-                                                        <li>
-                                                            <form class="dropdown-item delete-task-form"
-                                                                action="{{ route('admin.projects.tasks.destroy', ['project' => $project->id, 'task' => $task->id]) }}"
-                                                                method="POST">
-                                                                @csrf
-                                                                @method('DELETE')
-                                                                <button type="submit" class="btn btn-link p-0 text-danger">
-                                                                    <i class="fas fa-trash me-2"></i> حذف
-                                                                </button>
-                                                            </form>
-                                                        </li>
-                                                    </ul>
-                                                </div>
-                                            </td>
-                                        </tr>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="dropdown">
+                                                <button class="btn p-0" type="button" data-bs-toggle="dropdown">
+                                                    <i class="fas fa-ellipsis-v"></i>
+                                                </button>
+                                                <ul class="dropdown-menu">
+                                                    <li>
+                                                        <a class="dropdown-item"
+                                                            href="{{ route('admin.projects.tasks.edit', ['project' => $project->id, 'task' => $task->id]) }}">
+                                                            <i class="fas fa-edit me-2"></i> تعديل
+                                                        </a>
+                                                    </li>
+                                                    <li>
+                                                        <form class="dropdown-item delete-task-form"
+                                                            action="{{ route('admin.projects.tasks.destroy', ['project' => $project->id, 'task' => $task->id]) }}"
+                                                            method="POST">
+                                                            @csrf
+                                                            @method('DELETE')
+                                                            <button type="submit" class="btn btn-link p-0 text-danger">
+                                                                <i class="fas fa-trash me-2"></i> حذف
+                                                            </button>
+                                                        </form>
+                                                    </li>
+                                                </ul>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Pagination -->
+                    <!-- في قسم Pagination -->
+                    <div class="mt-4 d-flex justify-content-center">
+                        @if ($tasks->hasPages())
+                            <nav aria-label="Page navigation">
+                                <ul class="pagination">
+                                    {{-- Previous Page Link --}}
+                                    @if ($tasks->onFirstPage())
+                                        <li class="page-item disabled">
+                                            <span class="page-link">&laquo;</span>
+                                        </li>
+                                    @else
+                                        <li class="page-item">
+                                            <a class="page-link" href="{{ $tasks->previousPageUrl() }}"
+                                                rel="prev">&laquo;</a>
+                                        </li>
+                                    @endif
+
+                                    {{-- Pagination Elements --}}
+                                    @foreach ($tasks->getUrlRange(1, $tasks->lastPage()) as $page => $url)
+                                        @if ($page == $tasks->currentPage())
+                                            <li class="page-item active">
+                                                <span class="page-link">{{ $page }}</span>
+                                            </li>
+                                        @else
+                                            <li class="page-item">
+                                                <a class="page-link" href="{{ $url }}">{{ $page }}</a>
+                                            </li>
+                                        @endif
                                     @endforeach
-                                </tbody>
-                            </table>
+
+                                    {{-- Next Page Link --}}
+                                    @if ($tasks->hasMorePages())
+                                        <li class="page-item">
+                                            <a class="page-link" href="{{ $tasks->nextPageUrl() }}"
+                                                rel="next">&raquo;</a>
+                                        </li>
+                                    @else
+                                        <li class="page-item disabled">
+                                            <span class="page-link">&raquo;</span>
+                                        </li>
+                                    @endif
+
+                                </ul>
+                            </nav>
+                        @endif
+                        <div class="d-flex justify-end-end mb-3">
+                            <select class="form-select form-select-sm" id="per-page-select" style="width: 80px">
+                                <option value="10" {{ request('per_page') == 10 ? 'selected' : '' }}>10</option>
+                                <option value="25" {{ request('per_page') == 25 ? 'selected' : '' }}>25</option>
+                                <option value="50" {{ request('per_page') == 50 ? 'selected' : '' }}>50</option>
+                            </select>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
+    </div>
     </div>
 @endsection
 
@@ -198,14 +252,10 @@
         });
 
         // تحديث حالة المهمة
-        // تحديث حالة المهمة
         const statusSelects = document.querySelectorAll('.status-select');
         statusSelects.forEach(select => {
             select.addEventListener('change', function() {
-                console.log('change status');
                 const taskId = this.dataset.taskId;
-                console.log('taskId :' + taskId);
-
                 const newStatus = this.value;
                 const originalStatus = this.dataset.originalStatus || this.value;
 
@@ -229,18 +279,14 @@
                         })
                     })
                     .then(response => {
-                        if (!response.ok) {
-                            throw new Error('Network response was not ok');
-                        }
+                        if (!response.ok) throw new Error('Network response was not ok');
                         return response.json();
                     })
                     .then(data => {
                         if (data.success) {
-                            // تحديث واجهة المستخدم
                             const row = document.querySelector(
                                 `.task-row[data-task-id="${taskId}"]`);
                             if (row) {
-                                console.log('change row style')
                                 row.dataset.status = newStatus;
                                 updateRowStyle(row, newStatus);
                             }
@@ -254,14 +300,12 @@
                                 showConfirmButton: false,
                                 timer: 3000
                             });
-
                         } else {
                             throw new Error(data.message || 'حدث خطأ أثناء التحديث');
                         }
                     })
                     .catch(error => {
                         this.value = originalStatus;
-                        // toastr.error(error.message);
                         console.error('Error:', error);
                     })
                     .finally(() => {
@@ -276,17 +320,12 @@
 
         // دالة لتحديث نمط الصف حسب الحالة
         function updateRowStyle(row, status) {
-            // إزالة جميع كلاسات الحالة
-            console.log('change row style' + row)
-            console.log('change row style' + status)
-
             row.classList.remove(
                 'task-not-started',
                 'task-in-progress',
                 'task-completed'
             );
 
-            // إضافة الكلاس المناسب
             switch (status) {
                 case 'not_started':
                     row.classList.add('task-not-started');
@@ -322,20 +361,23 @@
             });
         });
 
-
+        // السحب والإفلات مع Pagination
         const tbody = document.getElementById('sortable-tasks');
-
-        new Sortable(tbody, {
-            animation: 150,
-            ghostClass: 'sortable-ghost',
-            chosenClass: 'sortable-chosen',
-            onEnd: function(evt) {
-                console.log('change order');
-
-                updateTasksOrder();
-            }
+        if (tbody) {
+            new Sortable(tbody, {
+                animation: 150,
+                ghostClass: 'sortable-ghost',
+                chosenClass: 'sortable-chosen',
+                onEnd: function(evt) {
+                    updateTasksOrder();
+                }
+            });
+        }
+        document.getElementById('per-page-select').addEventListener('change', function() {
+            const url = new URL(window.location.href);
+            url.searchParams.set('per_page', this.value);
+            window.location.href = url.toString();
         });
-
         // دالة لتحديث ترتيب المهام
         function updateTasksOrder() {
             const taskIds = [];
@@ -350,7 +392,8 @@
                         'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
                     },
                     body: JSON.stringify({
-                        taskIds: taskIds
+                        taskIds: taskIds,
+                        page: {{ $tasks->currentPage() }} // إرسال رقم الصفحة الحالية
                     })
                 })
                 .then(response => response.json())
@@ -367,14 +410,15 @@
                         });
                         // تحديث أرقام الصفوف
                         document.querySelectorAll('#sortable-tasks tr').forEach((row, index) => {
-                            row.cells[0].textContent = index + 1;
+                            const currentPage = {{ $tasks->currentPage() }};
+                            const perPage = {{ $tasks->perPage() }};
+                            row.cells[0].textContent = (currentPage - 1) * perPage + index + 1;
                         });
                     } else {
                         toastr.error('حدث خطأ أثناء تحديث الترتيب');
                     }
                 });
         }
-
     });
 </script>
 
@@ -397,5 +441,19 @@
         visibility: hidden !important;
         opacity: 0 !important;
         pointer-events: none !important;
+    }
+
+    /* تخصيص Pagination */
+    .pagination {
+        justify-content: center;
+    }
+
+    .pagination .page-item.active .page-link {
+        background-color: #696cff;
+        border-color: #696cff;
+    }
+
+    .pagination .page-link {
+        color: #696cff;
     }
 </style>

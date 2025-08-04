@@ -29,7 +29,7 @@
                 </ul>
                 <div class="nav-buttons">
                     <a href="{{ route('login.form') }}" class="btn btn-outline">تسجيل الدخول</a>
-                    <a href="#" class="btn btn-primary">ابدأ مجانًا</a>
+                    <a href="#contact" class="btn btn-primary">ابدأ مجانًا</a>
                 </div>
             </nav>
         </div>
@@ -41,7 +41,7 @@
             <h1>أدِر مشاريعك بكل كفاءة واحترافية</h1>
             <p>منصة متكاملة لإدارة المشاريع والمهام وفرق العمل، صممت لتبسيط عملك وزيادة إنتاجيتك</p>
             <div class="hero-buttons">
-                <a href="#" class="btn btn-primary">ابدأ الآن</a>
+                <a href="#contact" class="btn btn-primary">ابدأ الآن</a>
                 <a href="#" class="btn btn-outline"><i class="fas fa-play"></i> شاهد الفيديو</a>
             </div>
             <img src="https://via.placeholder.com/1000x500" alt="واجهة  {{ $setting->site_name }}" class="hero-image">
@@ -155,7 +155,7 @@
                             <li><i class="fas fa-check"></i> 1 جيجا مساحة تخزين</li>
                             <li><i class="fas fa-check"></i> تقارير أساسية</li>
                         </ul>
-                        <a href="#" class="btn btn-outline" style="width: 100%; text-align: center;">ابدأ
+                        <a href="#contact" class="btn btn-outline" style="width: 100%; text-align: center;">ابدأ
                             مجانًا</a>
                     </div>
                 </div>
@@ -173,7 +173,7 @@
                             <li><i class="fas fa-check"></i> تقارير متقدمة</li>
                             <li><i class="fas fa-check"></i> دعم فني متميز</li>
                         </ul>
-                        <a href="#" class="btn btn-primary" style="width: 100%; text-align: center;">اشترك
+                        <a href="#contact" class="btn btn-primary" style="width: 100%; text-align: center;">اشترك
                             الآن</a>
                     </div>
                 </div>
@@ -191,7 +191,7 @@
                             <li><i class="fas fa-check"></i> دعم فني على مدار الساعة</li>
                             <li><i class="fas fa-check"></i> تدريب مخصص</li>
                         </ul>
-                        <a href="#" class="btn btn-outline" style="width: 100%; text-align: center;">اتصل
+                        <a href="#contact" class="btn btn-outline" style="width: 100%; text-align: center;">اتصل
                             بالبيع</a>
                     </div>
                 </div>
@@ -214,7 +214,7 @@
                         ملحوظ."
                     </div>
                     <div class="testimonial-author">
-                        <img src="https://via.placeholder.com/50" alt="صورة العميل" class="author-avatar">
+                        <img src="{{ asset('cp/assets/img/avatars/1.png') }}" alt="صورة العميل" class="author-avatar">
                         <div class="author-info">
                             <h4>أحمد محمد</h4>
                             <p>مدير مشاريع، شركة التقنية</p>
@@ -227,7 +227,7 @@
                         عالية."
                     </div>
                     <div class="testimonial-author">
-                        <img src="https://via.placeholder.com/50" alt="صورة العميل" class="author-avatar">
+                        <img src="{{ asset('cp/assets/img/avatars/2.png') }}" alt="صورة العميل" class="author-avatar">
                         <div class="author-info">
                             <h4>سارة عبدالله</h4>
                             <p>رئيسة فريق التصميم</p>
@@ -240,7 +240,7 @@
                         عنها."
                     </div>
                     <div class="testimonial-author">
-                        <img src="https://via.placeholder.com/50" alt="صورة العميل" class="author-avatar">
+                        <img src="{{ asset('cp/assets/img/avatars/3.png') }}" alt="صورة العميل" class="author-avatar">
                         <div class="author-info">
                             <h4>خالد سعيد</h4>
                             <p>مدير تنفيذي، مؤسسة الإبداع</p>

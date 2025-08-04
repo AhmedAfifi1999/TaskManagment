@@ -20,15 +20,18 @@ class ProjectTaskController extends Controller
         // تحقق إذا كان المستخدم أدمن أو منشئ المشروع
         $isAdminOrOwner = auth()->user()->username == 'admin' || $project->user_id == auth()->id();
 
-        // جلب المهام مع التصفية حسب الصلاحيات
-        $project->load(['tasks' => function ($query) use ($isAdminOrOwner) {
-            if (!$isAdminOrOwner) {
-                $query->where('user_id', auth()->id());
-            }
-            $query->orderBy('priority');
-        }]);
 
-        return view('admin.tasks.index', compact('project'));
+        // جلب المهام مع التصفية حسب الصلاحيات + ترقيم الصفحات
+        $tasks = $project->tasks()
+            ->when(!$isAdminOrOwner, function ($query) {
+                $query->where('user_id', auth()->id());
+            })
+           
+
+            ->orderBy('priority') // الترتيب حسب الحقل المخصص
+            ->paginate(request('per_page', 15));
+
+        return view('admin.tasks.index', compact('project', 'tasks'));
     }
 
     public function create($projectId)
@@ -51,7 +54,7 @@ class ProjectTaskController extends Controller
             'description' => 'nullable|string',
             'priority' => 'required|integer|between:1,10',
             'user_id' => 'required|exists:users,id',
-            'start_time' => 'required|date',
+            'start_time' => 'nullable|date',
             'end_time' => 'nullable|date|after:start_time',
             'status' => 'required|in:not_started,in_progress,completed',
         ]);
@@ -95,7 +98,7 @@ class ProjectTaskController extends Controller
             'description' => 'nullable|string',
             'priority' => 'required|integer|between:1,10',
             'user_id' => 'required|exists:users,id',
-            'start_time' => 'required|date',
+            'start_time' => 'nullable|date',
             'end_time' => 'nullable|date|after:start_time',
             'status' => 'required|in:not_started,in_progress,completed',
         ]);

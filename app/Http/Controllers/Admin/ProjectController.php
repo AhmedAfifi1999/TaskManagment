@@ -23,7 +23,7 @@ class ProjectController extends Controller
                     $query->where('user_id', auth()->id());
                 })
                 ->latest()
-                ->paginate(10);
+                ->paginate(request('per_page', 15));
         }
         return view('admin.projects.index', compact('projects'));
     }
@@ -72,38 +72,36 @@ class ProjectController extends Controller
         $project = Project::findOrFail($id);
 
         // التحقق من الصلاحيات (يمكن استخدام Policy بدلاً من ذلك)
-        if ($project->user_id != auth()->id()) {
-            // dd([$project->user_id,auth()->id()]);
+        if ($project->user_id = auth()->id() || auth()->user()->username == "admin") {
+            $validated = $request->validate([
+                'name' => 'required|string|max:255',
+                'description' => 'nullable|string',
+                'color' => 'required|string|max:7',
+                'status' => 'required|in:NOT_STARTED,IN_PROGRESS,COMPLETED,ON_HOLD,DELAYED',
+                'start_date' => 'nullable|date',
+                'end_date' => 'nullable|date|after:start_date',
+                'team' => 'required|array',
+                'team.*' => 'exists:users,id'
+            ]);
+
+            // تحديث بيانات المشروع
+            $project->update([
+                'name' => $validated['name'],
+                'description' => $validated['description'],
+                'color' => $validated['color'],
+                'status' => $validated['status'],
+                'start_date' => $validated['start_date'],
+                'end_date' => $validated['end_date']
+            ]);
+
+            // تحديث أعضاء الفريق
+            $project->team()->sync($validated['team']);
+
+            return redirect()->route('admin.projects.index')
+                ->with('success', 'تم تحديث المشروع بنجاح');
+        } else {
             abort(403, 'غير مصرح لك بتعديل هذا المشروع');
         }
-
-        // التحقق من صحة البيانات
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'color' => 'required|string|max:7',
-            'status' => 'required|in:NOT_STARTED,IN_PROGRESS,COMPLETED,ON_HOLD,DELAYED',
-            'start_date' => 'nullable|date',
-            'end_date' => 'nullable|date|after:start_date',
-            'team' => 'required|array',
-            'team.*' => 'exists:users,id'
-        ]);
-
-        // تحديث بيانات المشروع
-        $project->update([
-            'name' => $validated['name'],
-            'description' => $validated['description'],
-            'color' => $validated['color'],
-            'status' => $validated['status'],
-            'start_date' => $validated['start_date'],
-            'end_date' => $validated['end_date']
-        ]);
-
-        // تحديث أعضاء الفريق
-        $project->team()->sync($validated['team']);
-
-        return redirect()->route('admin.projects.index')
-            ->with('success', 'تم تحديث المشروع بنجاح');
     }
 
     public function edit($id)
@@ -111,31 +109,34 @@ class ProjectController extends Controller
         $project = Project::findOrFail($id);
 
         // التحقق من الصلاحيات
-        if ($project->user_id != auth()->id()) {
+        if ($project->user_id = auth()->id() || auth()->user()->username == "admin") {
+
+            // dd($project->user_id != auth()->id());
+            $users = User::all();
+            $selectedTeam = $project->team->pluck('id')->toArray();
+
+            return view('admin.projects.edit', compact('project', 'users', 'selectedTeam'));
+        } else {
             abort(403, 'غير مصرح لك بتعديل هذا المشروع');
         }
-
-        $users = User::all();
-        $selectedTeam = $project->team->pluck('id')->toArray();
-
-        return view('admin.projects.edit', compact('project', 'users', 'selectedTeam'));
     }
     public function destroy($id)
     {
         $item = Project::findOrFail($id);
         // التحقق من الصلاحيات
-        if ($item->user_id != auth()->id()) {
-            // dd([$item, auth()->id()]);
+
+        if ($item->user_id == auth()->id() || auth()->user()->username == "admin") {
+            $item->team()->detach();
+
+            // ثم حذف المشروع
+            $item->delete();
+
+            return redirect()->route('admin.projects.index')
+                ->with('success', 'تم حذف المشروع بنجاح');
+        } else {
             abort(403, 'غير مصرح لك بحذف هذا المشروع');
         }
 
         // حذف العلاقات أولاً
-        $item->team()->detach();
-
-        // ثم حذف المشروع
-        $item->delete();
-
-        return redirect()->route('admin.projects.index')
-            ->with('success', 'تم حذف المشروع بنجاح');
     }
 }

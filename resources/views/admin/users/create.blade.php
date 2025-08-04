@@ -25,7 +25,7 @@
                                     <input
                                     type="file"
                                     id="upload"
-                                    name="avatar"
+                                    name="image"
                                     class="account-file-input"
                                     hidden
                                     accept="image/png, image/jpeg" />

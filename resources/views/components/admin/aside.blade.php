@@ -35,12 +35,12 @@
             </a>
         </li>
         <!-- إدارة المشاريع -->
-        <li class="menu-item {{ request()->routeIs('admin.management') ? 'active' : '' }} ">
+        {{-- <li class="menu-item {{ request()->routeIs('admin.management') ? 'active' : '' }} ">
             <a href="{{ route('admin.management') }}" class="menu-link">
                 <i class="menu-icon tf-icons ti ti-clipboard-list"></i>
                 <div data-i18n="إدارة المشاريع">إدارة المشاريع</div>
             </a>
-        </li>
+        </li> --}}
 
 
 
@@ -51,13 +51,13 @@
         </li>
         <li class="menu-item {{ request()->routeIs('admin.projects.create') ? 'active' : '' }}">
             <a href="{{ route('admin.projects.create') }}" class="menu-link">
-                <i class="menu-icon tf-icons ti ti-user-plus"></i>
+<i class="menu-icon tf-icons ti ti-file-plus"></i>
                 <div data-i18n="إضافة مشروع">إضافة مشروع</div>
             </a>
         </li>
         <li class="menu-item {{ request()->routeIs('admin.projects.index') ? 'active' : '' }}">
             <a href="{{ route('admin.projects.index') }}" class="menu-link">
-                <i class="menu-icon tf-icons ti ti-users"></i>
+                <i class="menu-icon tf-icons ti ti-layout-kanban"></i>
                 <div data-i18n="عرض المشاريع">عرض المشاريع</div>
             </a>
         </li>

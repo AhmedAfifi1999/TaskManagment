@@ -3,6 +3,7 @@
 @section('content')
     <div class="container-xxl flex-grow-1 container-p-y">
         <div class="row mb-6">
+
             <div class="nav-align-top">
                 <ul class="nav nav-pills flex-column flex-md-row mb-6 gap-2 gap-lg-0">
                     <li class="nav-item">

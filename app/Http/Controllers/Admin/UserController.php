@@ -16,7 +16,8 @@ class UserController extends Controller
      */
     public function index()
     {
-        $users = User::orderBy('created_at', 'desc')->paginate(10);
+        $users = User::orderBy('created_at', 'desc')
+            ->paginate(request('per_page', 15));;
 
         return view('admin.users.index', compact('users'));
     }
@@ -43,12 +44,12 @@ class UserController extends Controller
             'password' => 'required|string|confirmed|min:6',
             'is_active' => 'boolean',
             'is_banned' => 'boolean',
-            'avatar' => 'nullable|image|mimes:jpg,jpeg,png|max:800', // الصورة
+            'avatar' => 'nullable|image|mimes:jpg,jpeg,png|max:2000', // الصورة
         ]);
-    
+
         // تشفير كلمة المرور
         $data['password'] = Hash::make($data['password']);
-        $data['name']=$request->full_name;
+        $data['name'] = $request->full_name;
         // رفع الصورة إذا تم رفعها
         if ($request->hasFile('avatar')) {
             $file = $request->file('avatar');
@@ -56,12 +57,12 @@ class UserController extends Controller
             $path = $file->storeAs('users', $filename); // سيتم الحفظ في storage/app/users
             $data['image'] = $path;
         }
-    
+
         User::create($data);
-    
+
         return redirect()->route('admin.users.index')->with('success', 'تم إضافة المستخدم بنجاح');
     }
-    
+
     /**
      * Display the specified resource.
      */
@@ -77,7 +78,6 @@ class UserController extends Controller
     {
         $user = User::findOrFail($id);
         return view('admin.users.edit', compact('user'));
-
     }
 
     /**
@@ -88,7 +88,7 @@ class UserController extends Controller
         // التحقق من صحة البيانات المدخلة
         $data = $request->validate([
             'full_name' => 'required|string|max:255',
-            'username' => 'required|string|max:255|unique:users,username,' . $id, // استثناء المستخدم الحالي
+            'user_name' => 'required|string|max:255|unique:users,user_name,' . $id, // استثناء المستخدم الحالي
             'email' => 'required|email|max:255|unique:users,email,' . $id, // استثناء البريد الإلكتروني الحالي
             'phone' => 'nullable|string|max:20',
             'address' => 'nullable|string|max:255',
@@ -97,15 +97,15 @@ class UserController extends Controller
             'is_banned' => 'boolean',
             'avatar' => 'nullable|image|mimes:jpg,jpeg,png|max:800', // الصورة
         ]);
-    
+
         // العثور على المستخدم
         $user = User::findOrFail($id);
-    
+
         // إذا كانت هناك كلمة مرور جديدة
         if ($request->has('password')) {
             $data['password'] = Hash::make($data['password']);
         }
-        $data['name']=$request->full_name;
+        $data['name'] = $request->full_name;
 
         // رفع الصورة إذا تم رفعها
         if ($request->hasFile('avatar')) {
@@ -113,21 +113,21 @@ class UserController extends Controller
             if ($user->image && file_exists(storage_path('app/public/' . $user->image))) {
                 unlink(storage_path('app/public/' . $user->image));
             }
-    
+
             // رفع صورة جديدة
             $file = $request->file('avatar');
             $filename = uniqid() . '.' . $file->getClientOriginalExtension();
             $path = $file->storeAs('users', $filename); // حفظ الصورة في الدليل المحدد
             $data['image'] = $path; // تحديث الصورة
         }
-    
+
         // تحديث بيانات المستخدم
         $user->update($data);
-    
+
         // إعادة التوجيه مع رسالة النجاح
         return redirect()->route('admin.users.index')->with('success', 'تم تحديث بيانات المستخدم بنجاح');
     }
-    
+
 
     /**
      * Remove the specified resource from storage.
@@ -140,7 +140,5 @@ class UserController extends Controller
         }
         $user->delete();
         return redirect()->route('admin.users.index')->with('success', 'تم حذف المستخدم بنجاح.');
-
-
     }
 }

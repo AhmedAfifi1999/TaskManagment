@@ -5,21 +5,6 @@
 
         <div class="row">
             <div class="col-md-12">
-                <div class="nav-align-top">
-                    <ul class="nav nav-pills flex-column flex-md-row mb-6 gap-2 gap-lg-0">
-                        <li class="nav-item">
-                            <a class="nav-link active" href="javascript:void(0);">
-                                <i class="ti-sm ti ti-users me-1_5"></i> الإعدادات العامة
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="#">
-                                <i class="ti-sm ti ti-lock me-1_5"></i> الحماية
-                            </a>
-                        </li>
-
-                    </ul>
-                </div>
 
                 <div class="card mb-6">
                     <div class="card-body pt-4">

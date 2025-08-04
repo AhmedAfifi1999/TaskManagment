@@ -62,8 +62,11 @@
                                                 @break
                                             @endswitch
                                         </td>
-                                        <td>{{ \Carbon\Carbon::parse($project->start_date)->format('Y-m-d') }}</td>
-                                        <td>{{ $project->end_date ? \Carbon\Carbon::parse($project->end_date)->format('Y-m-d') : '--' }}
+                                        <td class="small-date">
+                                            {{ \Carbon\Carbon::parse($project->start_date)->format('Y-m-d') }}</td>
+                                        <td class="small-date">
+                                            {{ $project->end_date ? \Carbon\Carbon::parse($project->end_date)->format('Y-m-d') : '--' }}
+                                        </td>
                                         </td>
                                         <td>
                                             <div class="dropdown">
@@ -72,7 +75,7 @@
                                                     <i class="ti ti-dots-vertical"></i>
                                                 </button>
                                                 <div class="dropdown-menu">
-                                                           <a class="dropdown-item"
+                                                    <a class="dropdown-item"
                                                         href="{{ route('admin.projects.tasks.index', $project->id) }}">
                                                         <i class="fas fa-tasks"></i> عرض المهام
                                                     </a>
@@ -98,8 +101,58 @@
                     </div>
 
                     <!-- روابط الترقيم -->
-                    <div class="m-3">
-                        {{ $projects->links() }}
+                    <!-- في قسم Pagination -->
+                    <div class="mt-4 d-flex justify-content-center">
+                        @if ($projects->hasPages())
+                            <nav aria-label="Page navigation">
+                                <ul class="pagination">
+                                    {{-- Previous Page Link --}}
+                                    @if ($projects->onFirstPage())
+                                        <li class="page-item disabled">
+                                            <span class="page-link">&laquo;</span>
+                                        </li>
+                                    @else
+                                        <li class="page-item">
+                                            <a class="page-link" href="{{ $projects->previousPageUrl() }}"
+                                                rel="prev">&laquo;</a>
+                                        </li>
+                                    @endif
+
+                                    {{-- Pagination Elements --}}
+                                    @foreach ($projects->getUrlRange(1, $projects->lastPage()) as $page => $url)
+                                        @if ($page == $projects->currentPage())
+                                            <li class="page-item active">
+                                                <span class="page-link">{{ $page }}</span>
+                                            </li>
+                                        @else
+                                            <li class="page-item">
+                                                <a class="page-link" href="{{ $url }}">{{ $page }}</a>
+                                            </li>
+                                        @endif
+                                    @endforeach
+
+                                    {{-- Next Page Link --}}
+                                    @if ($projects->hasMorePages())
+                                        <li class="page-item">
+                                            <a class="page-link" href="{{ $projects->nextPageUrl() }}"
+                                                rel="next">&raquo;</a>
+                                        </li>
+                                    @else
+                                        <li class="page-item disabled">
+                                            <span class="page-link">&raquo;</span>
+                                        </li>
+                                    @endif
+
+                                </ul>
+                            </nav>
+                        @endif
+                        <div class="d-flex justify-end-end mb-3">
+                            <select class="form-select form-select-sm" id="per-page-select" style="width: 80px">
+                                <option value="10" {{ request('per_page') == 10 ? 'selected' : '' }}>10</option>
+                                <option value="25" {{ request('per_page') == 25 ? 'selected' : '' }}>25</option>
+                                <option value="50" {{ request('per_page') == 50 ? 'selected' : '' }}>50</option>
+                            </select>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -131,6 +184,13 @@
                 });
             });
         });
+
+        document.getElementById('per-page-select').addEventListener('change', function() {
+            const url = new URL(window.location.href);
+            url.searchParams.set('per_page', this.value);
+            window.location.href = url.toString();
+        });
+
     });
 </script>
 <style>

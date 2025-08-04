@@ -50,7 +50,7 @@
 
                             <!-- المسؤول عن المهمة -->
                             <div class="mb-3">
-                                <label class="form-label" for="user_id">المسؤول عن المهمة</label>
+                                <label class="form-label" for="user_id">المستخدم المسؤول عن المهمة</label>
                                 <select class="form-select" id="user_id" name="user_id" required>
                                     <option value="">اختر المسؤول</option>
                                     @foreach ($project->team as $user)
