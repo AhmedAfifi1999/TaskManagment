@@ -441,7 +441,7 @@
                                     @auth
                                         <h6 class="mb-0">{{ auth()->user()->name }}</h6>
                                         <small class="text-muted">
-                                            {{ auth()->user()->first()->name ?? 'مستخدم' }}
+                                            {{ auth()->user()->name ?? 'مستخدم' }}
                                         </small>
                                     @else
                                         <h6 class="mb-0">زائر</h6>
