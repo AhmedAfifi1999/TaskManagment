@@ -51,7 +51,7 @@
         </li>
         <li class="menu-item {{ request()->routeIs('admin.projects.create') ? 'active' : '' }}">
             <a href="{{ route('admin.projects.create') }}" class="menu-link">
-<i class="menu-icon tf-icons ti ti-file-plus"></i>
+                <i class="menu-icon tf-icons ti ti-file-plus"></i>
                 <div data-i18n="إضافة مشروع">إضافة مشروع</div>
             </a>
         </li>
@@ -61,24 +61,24 @@
                 <div data-i18n="عرض المشاريع">عرض المشاريع</div>
             </a>
         </li>
-
-
-        <!-- المستخدمون -->
-        <li class="menu-header small">
-            <span class="menu-header-text" data-i18n="المستخدمون">المستخدمون</span>
-        </li>
-        <li class="menu-item {{ request()->routeIs('admin.users.create') ? 'active' : '' }}">
-            <a href="{{ route('admin.users.create') }}" class="menu-link">
-                <i class="menu-icon tf-icons ti ti-user-plus"></i>
-                <div data-i18n="إضافة مستخدم">إضافة مستخدم</div>
-            </a>
-        </li>
-        <li class="menu-item {{ request()->routeIs('admin.users.index') ? 'active' : '' }}">
-            <a href="{{ route('admin.users.index') }}" class="menu-link">
-                <i class="menu-icon tf-icons ti ti-users"></i>
-                <div data-i18n="عرض المستخدمين">عرض المستخدمين</div>
-            </a>
-        </li>
+        @if (auth()->user()->username == 'admin')
+            <!-- المستخدمون -->
+            <li class="menu-header small">
+                <span class="menu-header-text" data-i18n="المستخدمون">المستخدمون</span>
+            </li>
+            <li class="menu-item {{ request()->routeIs('admin.users.create') ? 'active' : '' }}">
+                <a href="{{ route('admin.users.create') }}" class="menu-link">
+                    <i class="menu-icon tf-icons ti ti-user-plus"></i>
+                    <div data-i18n="إضافة مستخدم">إضافة مستخدم</div>
+                </a>
+            </li>
+            <li class="menu-item {{ request()->routeIs('admin.users.index') ? 'active' : '' }}">
+                <a href="{{ route('admin.users.index') }}" class="menu-link">
+                    <i class="menu-icon tf-icons ti ti-users"></i>
+                    <div data-i18n="عرض المستخدمين">عرض المستخدمين</div>
+                </a>
+            </li>
+        @endif
 
 
         <li class="menu-header small">
@@ -96,11 +96,14 @@
                 <div>الإعدادات</div>
             </a>
             <ul class="menu-sub">
-                <li class="menu-item  {{ request()->routeIs('admin.settings.edit') ? 'active' : '' }}">
-                    <a href="{{ route('admin.settings.edit') }}" class="menu-link">
-                        <div>اعدادات الموقع</div>
-                    </a>
-                </li>
+                @if (auth()->user()->username == 'admin')
+                    <li class="menu-item  {{ request()->routeIs('admin.settings.edit') ? 'active' : '' }}">
+                        <a href="{{ route('admin.settings.edit') }}" class="menu-link">
+                            <div>اعدادات الموقع</div>
+                        </a>
+                    </li>
+                @endif
+
                 <li class="menu-item {{ request()->routeIs('admin.settings.account') ? 'active' : '' }}">
                     <a href="{{ route('admin.settings.account') }}" class="menu-link">
                         <div>اعدادات الحساب</div>

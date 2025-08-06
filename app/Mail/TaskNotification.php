@@ -77,7 +77,7 @@ class TaskNotification extends Mailable
                         </tr>
                         <tr>
                             <td style="padding: 5px 0;"><strong>المشروع:</strong></td>
-                            <td style="padding: 5px 0;">' . ($project ? $project->title : 'غير معروف') . '</td>
+                            <td style="padding: 5px 0;">' . ($project ? $project->name : 'غير معروف') . '</td>
                         </tr>
                         <tr>
                             <td style="padding: 5px 0;"><strong>تاريخ الإنشاء:</strong></td>

@@ -44,7 +44,6 @@
                 <a href="#contact" class="btn btn-primary">ابدأ الآن</a>
                 <a href="#" class="btn btn-outline"><i class="fas fa-play"></i> شاهد الفيديو</a>
             </div>
-            <img src="https://via.placeholder.com/1000x500" alt="واجهة  {{ $setting->site_name }}" class="hero-image">
         </div>
     </section>
 

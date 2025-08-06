@@ -149,17 +149,24 @@
                                                         </a>
                                                     </li>
                                                     <li>
-                                                        <form class="dropdown-item delete-task-form"
+                                                        <a href="#" class="dropdown-item text-danger delete-task-btn">
+                                                            <i class="fas fa-trash me-2 text-danger"></i> <span
+                                                                class="text-danger">حذف</span>
+                                                        </a>
+                                                        <form class="d-none delete-task-form"
                                                             action="{{ route('admin.projects.tasks.destroy', ['project' => $project->id, 'task' => $task->id]) }}"
                                                             method="POST">
                                                             @csrf
                                                             @method('DELETE')
-                                                            <button type="submit" class="btn btn-link p-0 text-danger">
-                                                                <i class="fas fa-trash me-2"></i> حذف
-                                                            </button>
                                                         </form>
                                                     </li>
                                                 </ul>
+
+                                                <style>
+                                                    .dropdown-item.text-danger:hover {
+                                                        background-color: rgba(220, 53, 69, 0.1) !important;
+                                                    }
+                                                </style>
                                             </div>
                                         </td>
                                     </tr>
@@ -338,7 +345,29 @@
                     break;
             }
         }
+        // تأكيد الحذف مع SweetAlert
+        document.querySelectorAll('.delete-task-btn').forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                e.preventDefault();
+                const form = this.closest('li').querySelector('.delete-task-form');
 
+                Swal.fire({
+                    title: 'هل أنت متأكد؟',
+                    text: "لن تتمكن من التراجع عن هذا الإجراء!",
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#d33',
+                    cancelButtonColor: '#3085d6',
+                    confirmButtonText: 'نعم، احذف',
+                    cancelButtonText: 'إلغاء',
+                    reverseButtons: true
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        form.submit();
+                    }
+                });
+            });
+        });
         // تأكيد الحذف
         const deleteForms = document.querySelectorAll('.delete-task-form');
         deleteForms.forEach(form => {

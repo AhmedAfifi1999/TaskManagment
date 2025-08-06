@@ -15,7 +15,7 @@
                                 <tr>
                                     <th>الاسم الكامل</th>
                                     <th>اسم المستخدم</th>
-                                    <th>الصلاحيات</th>
+                                    {{-- <th>الصلاحيات</th> --}}
                                     <th>الحالة</th>
                                     <th>البريد الإلكتروني</th>
                                     <th>صورة المستخدم</th>
@@ -27,7 +27,7 @@
                                     <tr>
                                         <td>{{ $user->full_name }}</td>
                                         <td>{{ $user->username }}</td>
-                                        <td>مدير</td> {{-- عدل هذا لاحقًا حسب الصلاحيات --}}
+                                        {{-- <td>مدير</td> --}}
                                         <td>
                                             @if ($user->is_active)
                                                 <span class="badge bg-label-success">فعال</span>

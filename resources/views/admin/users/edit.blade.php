@@ -97,13 +97,13 @@
 
                         <!-- الحالة والصلاحيات -->
                         <div class="row mb-3">
-                            <div class="col-md-6">
+                            {{-- <div class="col-md-6">
                                 <label for="select2Multiple" class="form-label">الصلاحيات</label>
                                 <select id="select2Multiple" class="select2 form-select" multiple>
                                     <option value="AK" >مدير</option>
                                     <option value="HI" >ادمن</option>
                                 </select>
-                            </div>
+                            </div> --}}
 
                             <div class="col-md-3">
                                 <label class="form-label" for="status">حالة المستخدم</label>
