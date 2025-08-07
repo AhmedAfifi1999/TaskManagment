@@ -88,7 +88,7 @@ class UserController extends Controller
         // التحقق من صحة البيانات المدخلة
         $data = $request->validate([
             'full_name' => 'required|string|max:255',
-            'username' => 'required|string|max:255|unique:users,user_name,' . $id, // استثناء المستخدم الحالي
+            'username' => 'required|string|max:255|unique:users,username,' . $id, // استثناء المستخدم الحالي
             'email' => 'required|email|max:255|unique:users,email,' . $id, // استثناء البريد الإلكتروني الحالي
             'phone' => 'nullable|string|max:20',
             'address' => 'nullable|string|max:255',
