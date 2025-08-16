@@ -85,3 +85,12 @@ Route::prefix('tasks')->group(function () {
     Route::get('filter', [TasksController::class, 'filter'])->name('tasks.filter');
     Route::post('update-priority', [TasksController::class, 'updatePriority'])->name('tasks.updatePriority');
 });
+Route::get('/secure-image/{path}', function ($path) {
+    $fullPath = storage_path('app/' . $path);
+
+    if (!file_exists($fullPath)) {
+        abort(404);
+    }
+
+    return response()->file($fullPath);
+})->where('path', '.*')->name('secure.image');

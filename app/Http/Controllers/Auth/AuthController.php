@@ -29,7 +29,7 @@ class AuthController extends Controller
         ]);
 
         // تحديد ما إذا كان المدخل email أو username
-        $key = filter_var($request->email, FILTER_VALIDATE_EMAIL) ? 'email' : 'user_name';
+        $key = filter_var($request->email, FILTER_VALIDATE_EMAIL) ? 'email' : 'username';
 
         // محاولة تسجيل الدخول
         $attempt = [
