@@ -34,8 +34,8 @@ class TaskNotification extends Mailable
         $companyName = $setting->site_name;
 
         $subject = $this->notificationType === 'created'
-            ? 'تم إنشاء مهمة جديدة: ' . $this->task->title
-            : 'تم إكمال المهمة: ' . $this->task->title;
+            ? 'تم إنشاء مهمة جديدة: ' . $this->task->name
+            : 'تم إكمال المهمة: ' . $this->task->name;
 
         $statusColor = $this->notificationType === 'created' ? '#2196F3' : '#4CAF50';
         $statusText = $this->notificationType === 'created' ? 'قيد التنفيذ' : 'مكتمل';
@@ -66,7 +66,7 @@ class TaskNotification extends Mailable
             '</h2>
                 
                 <div style="background: #f9f9f9; padding: 15px; border-radius: 5px; margin-bottom: 20px; border-left: 4px solid ' . $statusColor . ';">
-                    <h3 style="margin-top: 0; color: #2c3e50;">' . $this->task->title . '</h3>
+                    <h3 style="margin-top: 0; color: #2c3e50;">' . $this->task->name . '</h3>
                     
                     <table style="width: 100%; border-collapse: collapse;">
                         <tr>
