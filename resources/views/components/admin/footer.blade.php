@@ -8,7 +8,7 @@
                     document.write(new Date().getFullYear());
                 </script>
                 , made with ❤️ by <a href="#" target="_blank"
-                    class="footer-link">Graduation Project Team</a>
+                    class="footer-link">'Mohammed Abu Anza'</a>
             </div>
             <div class="d-none d-lg-inline-block">
                 <a href="#" class="footer-link me-4"

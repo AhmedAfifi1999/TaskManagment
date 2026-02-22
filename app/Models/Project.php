@@ -12,8 +12,6 @@ class Project extends Model
 
     /**
      * The attributes that are mass assignable.
-     *
-     *
      */
     protected $fillable = [
         'name',
@@ -23,11 +21,14 @@ class Project extends Model
         'status',
         'start_date',
         'end_date',
+        'budget',
+        'currency',
+        'attachment',
+
     ];
 
     /**
      * Get all projects.
-     *
      */
     public static function getAllProjects($search = null)
     {
@@ -35,8 +36,7 @@ class Project extends Model
 
         // If there's a search criteria, filter projects based on it
         if ($search !== null) {
-            $query->whereNull('deleted_at');
-            $query->where('name', 'like', '%' . $search . '%');
+            $query->where('name', 'like', '%'.$search.'%');
             $query->orderBy('id', 'DESC');
         }
 
@@ -45,7 +45,6 @@ class Project extends Model
 
     /**
      * Create a new project.
-     *
      */
     public static function createProject(array $data)
     {
@@ -54,7 +53,6 @@ class Project extends Model
 
     /**
      * Update a project.
-     *
      */
     public function updateProject(array $data)
     {
@@ -63,7 +61,6 @@ class Project extends Model
 
     /**
      * Soft delete a project.
-     *
      */
     public function deleteProject()
     {
@@ -74,6 +71,7 @@ class Project extends Model
     {
         return $this->belongsTo(User::class, 'user_id');
     }
+
     public function user()
     {
         return $this->belongsTo(User::class, 'user_id');

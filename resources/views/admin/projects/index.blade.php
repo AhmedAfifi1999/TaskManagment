@@ -20,6 +20,8 @@
                                     <th>حالة المشروع</th>
                                     <th>تاريخ البدء</th>
                                     <th>تاريخ الانتهاء</th>
+                                    <th>سعر المشروع</th>
+                                    <th>ملف المشروع</th>
                                     <th>إجراءات</th>
                                 </tr>
                             </thead>
@@ -63,10 +65,21 @@
                                             @endswitch
                                         </td>
                                         <td class="small-date">
-                                            {{ \Carbon\Carbon::parse($project->start_date)->format('Y-m-d') }}</td>
+                                            {{ $project->start_date ? \Carbon\Carbon::parse($project->start_date)->format('Y-m-d') : '--' }}
+                                        </td>
                                         <td class="small-date">
                                             {{ $project->end_date ? \Carbon\Carbon::parse($project->end_date)->format('Y-m-d') : '--' }}
                                         </td>
+                                        <td>{{ $project->budget ?? '--' }}  {{ $project->currency ?? '--' }}</td>
+                                        <td>
+                                            @if ($project->attachment)
+                                                <a href="{{ asset('storage/' . $project->attachment) }}"
+                                                    class="btn btn-sm btn-outline-primary" target="_blank">
+                                                    عرض الملف
+                                                </a>
+                                            @else
+                                                --
+                                            @endif
                                         </td>
                                         <td>
                                             <div class="dropdown">
