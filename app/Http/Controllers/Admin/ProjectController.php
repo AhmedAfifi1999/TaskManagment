@@ -59,17 +59,18 @@ class ProjectController extends Controller
     //     return view('admin.projects.index', compact('projects'));
     // }
 
- public function create()
-{
-    $this->authorize('create project', Project::class);
+    public function create()
+    {
+        $this->authorize('create project', Project::class);
 
-    $users = User::all();
+        $users = User::all();
 
-    return view('admin.projects.create', compact('users'));
-}
+        return view('admin.projects.create', compact('users'));
+    }
 
     public function store(Request $request)
     {
+        $this->authorize('create', Project::class);
         // التحقق من صحة البيانات
         $validated = $request->validate([
             'name' => 'required|string|max:255',
@@ -163,41 +164,29 @@ class ProjectController extends Controller
 
         abort(403, 'غير مصرح لك بتعديل هذا المشروع');
     }
-
-    public function edit($id)
+   public function edit($id)
     {
         $project = Project::findOrFail($id);
 
-        // التحقق من الصلاحيات
-        if ($project->user_id == auth()->id() || auth()->user()->username == 'admin') {
+        $this->authorize('update', $project);
 
-            // dd($project->user_id != auth()->id());
-            $users = User::all();
-            $selectedTeam = $project->team->pluck('id')->toArray();
+        $users = User::all();
+        $selectedTeam = $project->team->pluck('id')->toArray();
 
-            return view('admin.projects.edit', compact('project', 'users', 'selectedTeam'));
-        } else {
-            abort(403, 'غير مصرح لك بتعديل هذا المشروع');
-        }
+        return view('admin.projects.edit', compact('project', 'users', 'selectedTeam'));
     }
 
-    public function destroy($id)
+ 
+
+    public function destroy(Project $project)
     {
-        $item = Project::findOrFail($id);
-        // التحقق من الصلاحيات
+        $this->authorize('delete', $project);
 
-        if ($item->user_id == auth()->id() || auth()->user()->username == 'admin') {
-            $item->team()->detach();
+        $project->team()->detach();
+        $project->delete();
 
-            // ثم حذف المشروع
-            $item->delete();
-
-            return redirect()->route('admin.projects.index')
-                ->with('success', 'تم حذف المشروع بنجاح');
-        } else {
-            abort(403, 'غير مصرح لك بحذف هذا المشروع');
-        }
-
-        // حذف العلاقات أولاً
+        return redirect()
+            ->route('admin.projects.index')
+            ->with('success', 'تم حذف المشروع بنجاح');
     }
 }

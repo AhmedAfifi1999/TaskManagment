@@ -70,7 +70,7 @@
                                         <td class="small-date">
                                             {{ $project->end_date ? \Carbon\Carbon::parse($project->end_date)->format('Y-m-d') : '--' }}
                                         </td>
-                                        <td>{{ $project->budget ?? '--' }}  {{ $project->currency ?? '--' }}</td>
+                                        <td>{{ $project->budget ?? '--' }} {{ $project->currency ?? '--' }}</td>
                                         <td>
                                             @if ($project->attachment)
                                                 <a href="{{ asset('storage/' . $project->attachment) }}"
@@ -92,18 +92,24 @@
                                                         href="{{ route('admin.projects.tasks.index', $project->id) }}">
                                                         <i class="fas fa-tasks"></i> عرض المهام
                                                     </a>
+                                                    @can('update', $project)
+
                                                     <a class="dropdown-item"
                                                         href="{{ route('admin.projects.edit', $project->id) }}">
                                                         <i class="ti ti-pencil me-1"></i> تعديل
                                                     </a>
-                                                    <form class="delete-project-form" method="POST"
-                                                        action="{{ route('admin.projects.destroy', $project->id) }}">
-                                                        @csrf
-                                                        @method('DELETE')
-                                                        <button type="submit" class="dropdown-item text-danger">
-                                                            <i class="ti ti-trash me-1"></i> حذف
-                                                        </button>
-                                                    </form>
+                                                    @endcan
+
+                                                    @can('delete', $project)
+                                                        <form class="delete-project-form" method="POST"
+                                                            action="{{ route('admin.projects.destroy', $project->id) }}">
+                                                            @csrf
+                                                            @method('DELETE')
+                                                            <button type="submit" class="dropdown-item text-danger">
+                                                                <i class="ti ti-trash me-1"></i> حذف
+                                                            </button>
+                                                        </form>
+                                                    @endcan
                                                 </div>
                                             </div>
                                         </td>
