@@ -49,18 +49,23 @@
         <li class="menu-header small">
             <span class="menu-header-text" data-i18n="المشاريع">المشاريع</span>
         </li>
+        @can('create project')
+
         <li class="menu-item {{ request()->routeIs('admin.projects.create') ? 'active' : '' }}">
             <a href="{{ route('admin.projects.create') }}" class="menu-link">
                 <i class="menu-icon tf-icons ti ti-file-plus"></i>
                 <div data-i18n="إضافة مشروع">إضافة مشروع</div>
             </a>
         </li>
-        <li class="menu-item {{ request()->routeIs('admin.projects.index') ? 'active' : '' }}">
-            <a href="{{ route('admin.projects.index') }}" class="menu-link">
-                <i class="menu-icon tf-icons ti ti-layout-kanban"></i>
-                <div data-i18n="عرض المشاريع">عرض المشاريع</div>
-            </a>
-        </li>
+ @endcan
+        @can('view projects')
+            <li class="menu-item {{ request()->routeIs('admin.projects.index') ? 'active' : '' }}">
+                <a href="{{ route('admin.projects.index') }}" class="menu-link">
+                    <i class="menu-icon tf-icons ti ti-layout-kanban"></i>
+                    <div data-i18n="عرض المشاريع">عرض المشاريع</div>
+                </a>
+            </li>
+        @endcan
         @if (auth()->user()->username == 'admin')
             <!-- المستخدمون -->
             <li class="menu-header small">
@@ -80,6 +85,20 @@
             </li>
         @endif
 
+
+        @if (auth()->user()->username == 'admin')
+            <!-- الصلاحيات -->
+            <li class="menu-header small">
+                <span class="menu-header-text" data-i18n="الصلاحيات">الصلاحيات</span>
+            </li>
+
+            <li class="menu-item {{ request()->routeIs('admin.roles.index') ? 'active' : '' }}">
+                <a href="{{ route('admin.roles.index') }}" class="menu-link">
+                    <i class="menu-icon tf-icons ti ti-users"></i>
+                    <div data-i18n="عرض الصلاحيات">عرض الصلاحيات</div>
+                </a>
+            </li>
+        @endif
 
         <li class="menu-header small">
             <span class="menu-header-text" data-i18n="الإعدادات">الإعدادات</span>

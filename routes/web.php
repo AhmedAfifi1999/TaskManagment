@@ -1,19 +1,19 @@
 <?php
 
 use App\Http\Controllers\Admin\DashboardController;
-use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\ProjectsController;
-use App\Http\Controllers\HomeController;
-use App\Http\Controllers\TasksController;
-use App\Http\Controllers\Auth\AuthController;
-use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\ProjectController;
 use App\Http\Controllers\Admin\ProjectTaskController;
 use App\Http\Controllers\Admin\SettingsController;
+use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\Auth\AuthController;
+use App\Http\Controllers\HomeController;
+use App\Http\Controllers\ProjectsController;
+use App\Http\Controllers\TasksController;
 use App\Http\Controllers\Website\MainController;
+use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Admin\RoleController;
 
 // Route::get('/', [HomeController::class, 'index'])->name('home.index');
-
 
 Route::post('/login', [AuthController::class, 'login'])->name('login');
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
@@ -22,7 +22,7 @@ Route::get('/', [MainController::class, 'index'])->name('main');
 
 Route::prefix('admin')->name('admin.')->middleware('auth')->group(function () {
     // Route::prefix('admin')->name('admin.')->group(function () {
-    // 
+    //
     Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
 
     Route::get('/management', [HomeController::class, 'index'])->name('management');
@@ -62,11 +62,19 @@ Route::prefix('admin')->name('admin.')->middleware('auth')->group(function () {
         Route::post('/update', [SettingsController::class, 'update'])->name('update');
         Route::get('/account', [SettingsController::class, 'account'])->name('account');
         Route::post('/account', [SettingsController::class, 'accountUpdate'])->name('accountUpdate');
-//---
+        //---
         Route::get('/security', [SettingsController::class, 'security'])->name('security');
         Route::post('/changePassword', [SettingsController::class, 'changePassword'])->name('changePassword');
 
     });
+        // Roles (إدارة الأدوار)
+    Route::prefix('roles')->name('roles.')->group(function () {
+        Route::get('/', [RoleController::class, 'index'])->name('index');         // عرض الأدوار
+        Route::post('/', [RoleController::class, 'store'])->name('store');        // إضافة دور جديد
+        Route::put('{role}', [RoleController::class, 'update'])->name('update');  // تعديل الدور
+        Route::delete('{role}', [RoleController::class, 'destroy'])->name('destroy'); // حذف الدور
+    });
+
 });
 
 // PROJECTS ROUTES
@@ -86,9 +94,9 @@ Route::prefix('tasks')->group(function () {
     Route::post('update-priority', [TasksController::class, 'updatePriority'])->name('tasks.updatePriority');
 });
 Route::get('/secure-image/{path}', function ($path) {
-    $fullPath = storage_path('app/' . $path);
+    $fullPath = storage_path('app/'.$path);
 
-    if (!file_exists($fullPath)) {
+    if (! file_exists($fullPath)) {
         abort(404);
     }
 
