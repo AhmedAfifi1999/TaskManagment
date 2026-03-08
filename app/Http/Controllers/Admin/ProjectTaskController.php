@@ -13,6 +13,41 @@ class ProjectTaskController extends Controller
 {
     //
 
+    public function display(Request $request, $id)
+    {
+        // إذا تم تمرير project_id عبر query string استخدمه، وإلا استخدم $id من URL
+        $projectId = $request->query('project_id', $id);
+
+        // جلب المشروع الحالي مع المهام
+        $project = Project::findOrFail($projectId);
+
+        // جلب كل المشاريع لعرضها في select
+        $projects = Project::all();
+
+        // تحقق إذا كان المستخدم أدمن أو منشئ المشروع
+        $isAdminOrOwner = auth()->user()->username == 'admin'
+            || $project->user_id == auth()->id();
+
+        // جلب المهام حسب الصلاحيات وترتيب حسب priority + eager load المشروع لكل مهمة
+        $tasks = $project->tasks()
+            ->when(! $isAdminOrOwner, function ($query) {
+                $query->where('user_id', auth()->id());
+            })
+            ->orderBy('priority')
+            ->with('projectTask') // ضروري لعلاقة project داخل المهمة
+            ->get();
+
+        // تجميع المهام حسب الحالة لتسهيل عرض Kanban
+        $tasksByStatus = $tasks->groupBy('status');
+
+        return view('admin.tasks.display', compact(
+            'project',
+            'projects',
+            'tasks',
+            'tasksByStatus'
+        ));
+    }
+
     public function index($id)
     {
         $project = Project::findOrFail($id);
@@ -20,13 +55,11 @@ class ProjectTaskController extends Controller
         // تحقق إذا كان المستخدم أدمن أو منشئ المشروع
         $isAdminOrOwner = auth()->user()->username == 'admin' || $project->user_id == auth()->id();
 
-
         // جلب المهام مع التصفية حسب الصلاحيات + ترقيم الصفحات
         $tasks = $project->tasks()
-            ->when(!$isAdminOrOwner, function ($query) {
+            ->when(! $isAdminOrOwner, function ($query) {
                 $query->where('user_id', auth()->id());
             })
-           
 
             ->orderBy('priority') // الترتيب حسب الحقل المخصص
             ->paginate(request('per_page', 15));
@@ -37,15 +70,19 @@ class ProjectTaskController extends Controller
     public function create($projectId)
     {
         $project = Project::with('team')->find($projectId);
+
         return view('admin.tasks.create', compact('project'));
     }
+
     public function edit($projectId, $taskId)
     {
         $task = Task::find($taskId);
 
         $project = Project::with('team')->find($projectId);
+
         return view('admin.tasks.edit', compact('project', 'task'));
     }
+
     public function store(Request $request, $projectId)
     {
         // التحقق من صحة البيانات
@@ -67,12 +104,11 @@ class ProjectTaskController extends Controller
             $project->team->contains($currentUser->id); // أو عضو في الفريق
 
         // 3. إذا لم يكن مخولاً، نمنعه من إنشاء المهمة
-        if (!$isAllowed) {
+        if (! $isAllowed) {
             return back()
                 ->withErrors(['user_id' => 'ليست لديك صلاحية إنشاء مهام في هذا المشروع'])
                 ->withInput();
         }
-
 
         // إنشاء المشروع
         $task = Task::create([
@@ -90,6 +126,7 @@ class ProjectTaskController extends Controller
         return redirect()->route('admin.projects.tasks.index', $projectId)
             ->with('success', 'تم إنشاء المهمة بنجاح');
     }
+
     public function update(Request $request, $projectId, $taskId)
     {
         // التحقق من صحة البيانات
@@ -114,7 +151,7 @@ class ProjectTaskController extends Controller
             $currentUser->id == $project->user_id ||    // أو هو منشئ المشروع
             $project->team->contains($currentUser->id); // أو عضو في الفريق
 
-        if (!$isAllowed) {
+        if (! $isAllowed) {
             return back()
                 ->withErrors(['user_id' => 'ليست لديك صلاحية تعديل مهام في هذا المشروع'])
                 ->withInput();
@@ -125,7 +162,7 @@ class ProjectTaskController extends Controller
         $isUserValid = $newAssignedUser->id == $project->user_id ||
             $project->team->contains('id', $newAssignedUser->id);
 
-        if (!$isUserValid) {
+        if (! $isUserValid) {
             return back()
                 ->withErrors(['user_id' => 'لا يمكن تعيين المهمة لهذا المستخدم'])
                 ->withInput();
@@ -150,7 +187,7 @@ class ProjectTaskController extends Controller
     {
         $request->validate([
             'taskIds' => 'required|array',
-            'taskIds.*' => 'integer|exists:tasks,id'
+            'taskIds.*' => 'integer|exists:tasks,id',
         ]);
 
         $taskIds = $request->input('taskIds', []);
@@ -169,7 +206,7 @@ class ProjectTaskController extends Controller
     {
 
         $validated = $request->validate([
-            'status' => 'required|in:not_started,in_progress,completed' // تأكد من تطابق القيم مع جدولك
+            'status' => 'required|in:not_started,in_progress,completed', // تأكد من تطابق القيم مع جدولك
         ]);
         $task = Task::find($TaskId);
         $task->update(['status' => $validated['status']]);

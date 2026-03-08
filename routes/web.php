@@ -3,6 +3,7 @@
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\ProjectController;
 use App\Http\Controllers\Admin\ProjectTaskController;
+use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\SettingsController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Auth\AuthController;
@@ -11,7 +12,6 @@ use App\Http\Controllers\ProjectsController;
 use App\Http\Controllers\TasksController;
 use App\Http\Controllers\Website\MainController;
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\Admin\RoleController;
 
 // Route::get('/', [HomeController::class, 'index'])->name('home.index');
 
@@ -47,6 +47,8 @@ Route::prefix('admin')->name('admin.')->middleware('auth')->group(function () {
 
         Route::prefix('{project}/tasks')->name('tasks.')->group(function () {
             Route::get('/', [ProjectTaskController::class, 'index'])->name('index'); // عرض جميع المهام
+            Route::get('/display', [ProjectTaskController::class, 'display'])->name('display'); // عرض جميع المهام
+
             Route::get('create', [ProjectTaskController::class, 'create'])->name('create'); // نموذج إضافة مهمة
             Route::post('/', [ProjectTaskController::class, 'store'])->name('store'); // حفظ المهمة
             Route::get('{task}/edit', [ProjectTaskController::class, 'edit'])->name('edit'); // تعديل المهمة
@@ -67,13 +69,15 @@ Route::prefix('admin')->name('admin.')->middleware('auth')->group(function () {
         Route::post('/changePassword', [SettingsController::class, 'changePassword'])->name('changePassword');
 
     });
-        // Roles (إدارة الأدوار)
-    Route::prefix('roles')->name('roles.')->group(function () {
-        Route::get('/', [RoleController::class, 'index'])->name('index');         // عرض الأدوار
-        Route::post('/', [RoleController::class, 'store'])->name('store');        // إضافة دور جديد
-        Route::put('{role}', [RoleController::class, 'update'])->name('update');  // تعديل الدور
-        Route::delete('{role}', [RoleController::class, 'destroy'])->name('destroy'); // حذف الدور
-    });
+    // Roles (إدارة الأدوار)
+    Route::middleware(['auth', 'role:admin'])
+
+        ->prefix('roles')->name('roles.')->group(function () {
+            Route::get('/', [RoleController::class, 'index'])->name('index');         // عرض الأدوار
+            Route::post('/', [RoleController::class, 'store'])->name('store');        // إضافة دور جديد
+            Route::put('{role}', [RoleController::class, 'update'])->name('update');  // تعديل الدور
+            Route::delete('{role}', [RoleController::class, 'destroy'])->name('destroy'); // حذف الدور
+        });
 
 });
 
