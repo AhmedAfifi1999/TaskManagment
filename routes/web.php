@@ -27,6 +27,17 @@ Route::prefix('admin')->name('admin.')->middleware('auth')->group(function () {
 
     Route::get('/management', [HomeController::class, 'index'])->name('management');
 
+    Route::get('/notifications/read/{id}', function ($id) {
+
+        $notification = auth()->user()
+            ->notifications()
+            ->findOrFail($id);
+
+        $notification->markAsRead();
+
+        return back();
+
+    })->name('notifications.read');
     // users
     Route::prefix('users')->name('users.')->group(function () {
         Route::get('/', [UserController::class, 'index'])->name('index');

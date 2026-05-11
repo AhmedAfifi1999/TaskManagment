@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Project;
 use App\Models\Task;
 use App\Models\User;
+use App\Notifications\TaskAssignedNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -122,6 +123,11 @@ class ProjectTaskController extends Controller
             'user_id' => $validated['user_id'],
             'project_id' => $projectId,
         ]);
+        $assignedUser = User::find($validated['user_id']);
+
+        if ($assignedUser) {
+            $assignedUser->notify(new TaskAssignedNotification($task));
+        }
 
         return redirect()->route('admin.projects.tasks.index', $projectId)
             ->with('success', 'تم إنشاء المهمة بنجاح');
