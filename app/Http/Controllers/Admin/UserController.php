@@ -3,11 +3,11 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Facades\Hash;
 use App\Models\User;
-
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
+use Spatie\Permission\Models\Role;
 
 class UserController extends Controller
 {
@@ -16,8 +16,8 @@ class UserController extends Controller
      */
     public function index()
     {
-        $users = User::orderBy('created_at', 'desc')
-            ->paginate(request('per_page', 15));;
+        $users = User::with('roles')->orderBy('created_at', 'desc')
+            ->paginate(request('per_page', 15));
 
         return view('admin.users.index', compact('users'));
     }
@@ -27,7 +27,9 @@ class UserController extends Controller
      */
     public function create()
     {
-        return view('admin.users.create');
+        $roles = Role::all();
+
+        return view('admin.users.create', compact('roles'));
     }
 
     /**
@@ -44,6 +46,7 @@ class UserController extends Controller
             'password' => 'required|string|confirmed|min:6',
             'is_active' => 'boolean',
             'is_banned' => 'boolean',
+            'role' => 'required|exists:roles,name',
             'avatar' => 'nullable|image|mimes:jpg,jpeg,png|max:2000', // الصورة
         ]);
 
@@ -53,13 +56,15 @@ class UserController extends Controller
         // رفع الصورة إذا تم رفعها
         if ($request->hasFile('avatar')) {
             $file = $request->file('avatar');
-            $filename = uniqid() . '.' . $file->getClientOriginalExtension();
+            $filename = uniqid().'.'.$file->getClientOriginalExtension();
             $path = $file->storeAs('users', $filename); // سيتم الحفظ في storage/app/users
             $data['image'] = $path;
         }
 
-        User::create($data);
+    $user = User::create($data);
 
+    // 👇 إضافة الدور
+    $user->assignRole($request->role);
         return redirect()->route('admin.users.index')->with('success', 'تم إضافة المستخدم بنجاح');
     }
 
@@ -74,12 +79,14 @@ class UserController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(string $id)
-    {
-        $user = User::findOrFail($id);
-        return view('admin.users.edit', compact('user'));
-    }
+public function edit(string $id)
+{
+    $user = User::findOrFail($id);
 
+    $roles = Role::all();
+
+    return view('admin.users.edit', compact('user', 'roles'));
+}
     /**
      * Update the specified resource in storage.
      */
@@ -88,13 +95,14 @@ class UserController extends Controller
         // التحقق من صحة البيانات المدخلة
         $data = $request->validate([
             'full_name' => 'required|string|max:255',
-            'username' => 'required|string|max:255|unique:users,username,' . $id, // استثناء المستخدم الحالي
-            'email' => 'required|email|max:255|unique:users,email,' . $id, // استثناء البريد الإلكتروني الحالي
+            'username' => 'required|string|max:255|unique:users,username,'.$id, // استثناء المستخدم الحالي
+            'email' => 'required|email|max:255|unique:users,email,'.$id, // استثناء البريد الإلكتروني الحالي
             'phone' => 'nullable|string|max:20',
             'address' => 'nullable|string|max:255',
             'password' => 'nullable|string|confirmed|min:6', // كلمة المرور اختياري في التحديث
             'is_active' => 'boolean',
             'is_banned' => 'boolean',
+            'role' => 'required|exists:roles,name',
             'avatar' => 'nullable|image|mimes:jpg,jpeg,png|max:800', // الصورة
         ]);
 
@@ -110,24 +118,23 @@ class UserController extends Controller
         // رفع الصورة إذا تم رفعها
         if ($request->hasFile('avatar')) {
             // حذف الصورة القديمة إذا كانت موجودة
-            if ($user->image && file_exists(storage_path('app/public/' . $user->image))) {
-                unlink(storage_path('app/public/' . $user->image));
+            if ($user->image && file_exists(storage_path('app/public/'.$user->image))) {
+                unlink(storage_path('app/public/'.$user->image));
             }
 
             // رفع صورة جديدة
             $file = $request->file('avatar');
-            $filename = uniqid() . '.' . $file->getClientOriginalExtension();
+            $filename = uniqid().'.'.$file->getClientOriginalExtension();
             $path = $file->storeAs('users', $filename); // حفظ الصورة في الدليل المحدد
             $data['image'] = $path; // تحديث الصورة
         }
 
         // تحديث بيانات المستخدم
         $user->update($data);
-
+    $user->assignRole($request->role);
         // إعادة التوجيه مع رسالة النجاح
         return redirect()->route('admin.users.index')->with('success', 'تم تحديث بيانات المستخدم بنجاح');
     }
-
 
     /**
      * Remove the specified resource from storage.
@@ -139,6 +146,7 @@ class UserController extends Controller
             Storage::disk('local')->delete($user->image);
         }
         $user->delete();
+
         return redirect()->route('admin.users.index')->with('success', 'تم حذف المستخدم بنجاح.');
     }
 }
