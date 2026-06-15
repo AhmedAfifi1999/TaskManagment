@@ -141,10 +141,10 @@
         <div class="drag-target"></div>
     </div>
     <!-- / Layout wrapper -->
-
+    <x-admin.chat />
     <!-- Core JS -->
     <!-- build:js assets/vendor/js/core.js -->
-
+<script src="{{ asset('cp/js/ai-chat.js') }}"></script>
     <script src="{{ asset('cp/assets/vendor/libs/jquery/jquery.js') }}"></script>
 
     <script src="{{ asset('cp/assets/vendor/libs/popper/popper.js') }}"></script>

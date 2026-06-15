@@ -1,5 +1,5 @@
 <?php
-
+use App\Http\Controllers\Admin\AIChatController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\ProjectController;
 use App\Http\Controllers\Admin\ProjectTaskController;
@@ -26,7 +26,9 @@ Route::prefix('admin')->name('admin.')->middleware('auth')->group(function () {
     Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
 
     Route::get('/management', [HomeController::class, 'index'])->name('management');
+        Route::get('/manage', [HomeController::class, 'manage'])->name('manage');
 
+    Route::post('/ai/chat', [AIChatController::class, 'chat']);
     Route::get('/notifications/read/{id}', function ($id) {
 
         $notification = auth()->user()

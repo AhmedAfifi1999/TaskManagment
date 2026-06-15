@@ -93,19 +93,19 @@
                     <div class="collapse navbar-collapse mt-sm-0 mt-2 me-md-0 me-sm-4" id="navbar">
                         <ul class="navbar-nav me-auto"> <!-- Changed to me-auto for left alignment -->
                             <li class="nav-item">
-                                <a class="nav-link active fw-bold" href="#" style="color: #5e72e4;">
+                                <a class="nav-link active fw-bold" href="{{ route('admin.dashboard') }}" style="color: #5e72e4;">
                                     <i class="fas fa-home me-2"></i>
                                     <span class="d-sm-inline d-none">Dashboard</span>
                                 </a>
                             </li>
                             <li class="nav-item">
-                                <a class="nav-link fw-bold" href="#">
+                                <a class="nav-link fw-bold" href="{{ route('admin.projects.index') }}">
                                     <i class="fas fa-tasks me-2"></i>
                                     <span class="d-sm-inline d-none">Projects</span>
                                 </a>
                             </li>
                             <li class="nav-item">
-                                <a class="nav-link fw-bold" href="#">
+                                <a class="nav-link fw-bold" href="{{ route('admin.users.index') }}#">
                                     <i class="fas fa-users me-2"></i>
                                     <span class="d-sm-inline d-none">Users</span>
                                 </a>
