@@ -50,14 +50,13 @@
             <span class="menu-header-text" data-i18n="المشاريع">المشاريع</span>
         </li>
         @can('create project')
-
-        <li class="menu-item {{ request()->routeIs('admin.projects.create') ? 'active' : '' }}">
-            <a href="{{ route('admin.projects.create') }}" class="menu-link">
-                <i class="menu-icon tf-icons ti ti-file-plus"></i>
-                <div data-i18n="إضافة مشروع">إضافة مشروع</div>
-            </a>
-        </li>
- @endcan
+            <li class="menu-item {{ request()->routeIs('admin.projects.create') ? 'active' : '' }}">
+                <a href="{{ route('admin.projects.create') }}" class="menu-link">
+                    <i class="menu-icon tf-icons ti ti-file-plus"></i>
+                    <div data-i18n="إضافة مشروع">إضافة مشروع</div>
+                </a>
+            </li>
+        @endcan
         @can('view projects')
             <li class="menu-item {{ request()->routeIs('admin.projects.index') ? 'active' : '' }}">
                 <a href="{{ route('admin.projects.index') }}" class="menu-link">
@@ -66,11 +65,20 @@
                 </a>
             </li>
         @endcan
-                @can('view projects')
+        @can('view projects')
             <li class="menu-item {{ request()->routeIs('admin.management') ? 'active' : '' }}">
                 <a href="{{ route('admin.management') }}" class="menu-link">
-                    <i class="menu-icon tf-icons ti ti-layout-kanban"></i>
-                    <div data-i18n="ادارة المشاريع">ادارة المشاريع </div>
+                    <i class="menu-icon tf-icons ti ti-settings-cog"></i>
+                    <div data-i18n="ادارة المشاريع">ادارة المشاريع</div>
+                </a>
+            </li>
+        @endcan
+
+        @can('view projects')
+            <li class="menu-item {{ request()->routeIs('admin.manage') ? 'active' : '' }}">
+                <a href="{{ route('admin.manage') }}" class="menu-link">
+                    <i class="menu-icon tf-icons ti ti-chart-bar"></i>
+                    <div data-i18n="احصائيات المشاريع">احصائيات المشاريع</div>
                 </a>
             </li>
         @endcan
