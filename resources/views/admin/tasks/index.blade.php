@@ -12,6 +12,9 @@
                             <a href="{{ route('admin.projects.tasks.create', $project->id) }}" class="btn btn-primary">
                                 <i class="fas fa-plus me-2"></i>إضافة مهمة
                             </a>
+                            <a href="{{ route('admin.projects.tasks.display', $project->id) }}" class="btn btn-primary">
+                                <i class="fas fa-eye me-2"></i> عرض المهام
+                            </a>
                         </div>
                     </h5>
                     <div class="card-body">
@@ -144,24 +147,33 @@
                                                 <ul class="dropdown-menu">
                                                     <li>
                                                         <a class="dropdown-item"
-                                                            href="{{ route('admin.projects.tasks.edit', ['project' => $project->id, 'task' => $task->id]) }}">
-                                                            <i class="fas fa-edit me-2"></i> تعديل
+                                                            href="{{ route('admin.projects.tasks.show', [
+                                                                'project' => $project->id,
+                                                                'task' => $task->id,
+                                                            ]) }}">
+                                                            <i class="ti ti-eye me-2"></i>
+                                                            عرض
                                                         </a>
                                                     </li>
+
+                                                    <li>
+                                                        <a class="dropdown-item"
+                                                            href="{{ route('admin.projects.tasks.edit', [
+                                                                'project' => $project->id,
+                                                                'task' => $task->id,
+                                                            ]) }}">
+                                                            <i class="ti ti-edit me-2"></i>
+                                                            تعديل
+                                                        </a>
+                                                    </li>
+
                                                     <li>
                                                         <a href="#" class="dropdown-item text-danger delete-task-btn">
-                                                            <i class="fas fa-trash me-2 text-danger"></i> <span
-                                                                class="text-danger">حذف</span>
+                                                            <i class="ti ti-trash me-2"></i>
+                                                            حذف
                                                         </a>
-                                                        <form class="d-none delete-task-form"
-                                                            action="{{ route('admin.projects.tasks.destroy', ['project' => $project->id, 'task' => $task->id]) }}"
-                                                            method="POST">
-                                                            @csrf
-                                                            @method('DELETE')
-                                                        </form>
                                                     </li>
                                                 </ul>
-
                                                 <style>
                                                     .dropdown-item.text-danger:hover {
                                                         background-color: rgba(220, 53, 69, 0.1) !important;

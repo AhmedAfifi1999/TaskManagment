@@ -49,6 +49,22 @@ class ProjectTaskController extends Controller
         ));
     }
 
+    public function show($projectId, $taskId)
+    {
+        $project = Project::with('team')->findOrFail($projectId);
+
+
+        $task = Task::with([
+            'user',
+            'projectTask.creator',
+        ])->findOrFail($taskId);
+
+        return view('admin.tasks.show', compact(
+            'task',
+            'project'
+        ));
+    }
+
     public function index($id)
     {
         $project = Project::findOrFail($id);
@@ -70,7 +86,9 @@ class ProjectTaskController extends Controller
 
     public function create($projectId)
     {
-        $project = Project::with('team')->find($projectId);
+        $project = Project::wsith('team')->find($projectId);
+
+        $this->authorizeProject($project);
 
         return view('admin.tasks.create', compact('project'));
     }
@@ -80,6 +98,8 @@ class ProjectTaskController extends Controller
         $task = Task::find($taskId);
 
         $project = Project::with('team')->find($projectId);
+
+        $this->authorizeProject($project);
 
         return view('admin.tasks.edit', compact('project', 'task'));
     }
@@ -97,6 +117,8 @@ class ProjectTaskController extends Controller
             'status' => 'required|in:not_started,in_progress,completed',
         ]);
         $project = Project::with(['user', 'team'])->findOrFail($projectId);
+
+        $this->authorizeProject($project);
         $currentUser = auth()->user();
 
         // 2. التحقق من الصلاحية:
@@ -148,6 +170,8 @@ class ProjectTaskController extends Controller
 
         // الحصول على المشروع والمهمة
         $project = Project::with(['user', 'team'])->findOrFail($projectId);
+
+        $this->authorizeProject($project);
         $task = Task::findOrFail($taskId);
 
         $currentUser = auth()->user();
@@ -223,6 +247,9 @@ class ProjectTaskController extends Controller
     public function destroy($projectId, $id)
     {
         $item = Project::findOrFail($projectId);
+        $project = Project::with('team')->findOrFail($projectId);
+
+        $this->authorizeProject($project);
         // التحقق من الصلاحيات
         if ($item->user_id != auth()->id()) {
             // dd([$item, auth()->id()]);
@@ -236,5 +263,22 @@ class ProjectTaskController extends Controller
 
         return redirect()->route('admin.projects.tasks.index', ['project' => $projectId])
             ->with('success', 'تم حذف المهمة بنجاح');
+    }
+
+    protected function authorizeProject(Project $project)
+    {
+        $user = auth()->user();
+
+        // Admin لديه صلاحية كاملة
+        if ($user->hasRole('admin') || $user->can('manage projects')) {
+            return true;
+        }
+
+        // صاحب المشروع
+        if ($project->user_id == $user->id) {
+            return true;
+        }
+
+        abort(403, 'ليس لديك صلاحية على هذا المشروع');
     }
 }

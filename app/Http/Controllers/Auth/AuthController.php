@@ -21,45 +21,79 @@ class AuthController extends Controller
     return view('auth.login', compact('website'));
     }
     public function login(Request $request)
-    {
-        // التحقق من البيانات
-        $request->validate([
-            'email' => 'required|string', // يمكن أن يكون email أو username
-            'password' => 'required',
-        ]);
+{
+    // التحقق من البيانات
+    $request->validate([
+        'email' => 'required|string',
+        'password' => 'required|string',
+    ]);
 
-        // تحديد ما إذا كان المدخل email أو username
-        $key = filter_var($request->email, FILTER_VALIDATE_EMAIL) ? 'email' : 'username';
+    // تحديد إذا كان المدخل Email أو Username
+    $field = filter_var($request->email, FILTER_VALIDATE_EMAIL)
+        ? 'email'
+        : 'username';
 
-        // محاولة تسجيل الدخول
-        $attempt = [
-            $key => $request->email,
-            'password' => $request->password,
-        ];
-        //  dd(Auth::attempt($attempt));
+    // بيانات تسجيل الدخول
+    $credentials = [
+        $field => $request->email,
+        'password' => $request->password,
+        'is_active' => 1,
+        'is_banned' => 0,
+    ];
 
-        if (Auth::attempt($attempt)) {
+    // محاولة تسجيل الدخول
+    if (Auth::attempt($credentials)) {
 
-            // التحقق من أن المستخدم مفعل وغير محظور
-            $user = Auth::user();
+        $request->session()->regenerate();
 
-            if ($user->is_active == 1 && $user->is_banned == 0) {
-
-                $request->session()->regenerate(); // تجديد session لمنع هجمات fixation
-                return redirect()->intended('/admin')->with('success', 'تم تسجيل الدخول بنجاح!'); // رسالة نجاح
-            } else {
-                dd('test wrong');
-
-                // إذا كان المستخدم غير مفعل أو محظور
-                Auth::logout(); // تسجيل الخروج
-                return redirect()->back()->with('error', 'الحساب غير مفعل أو محظور.'); // رسالة خطأ
-            }
-        }
-        //  dd('test not ok');
-
-        // إذا فشل تسجيل الدخول
-        return redirect()->back()->with('error', 'بيانات الاعتماد غير صحيحة.'); // رسالة خطأ
+        return redirect()->intended('/admin')
+            ->with('success', 'تم تسجيل الدخول بنجاح!');
     }
+
+    return back()
+        ->withInput($request->only('email'))
+        ->with('error', 'بيانات الاعتماد غير صحيحة أو الحساب غير مفعل أو محظور.');
+}
+    // public function login(Request $request)
+    // {
+    //     // التحقق من البيانات
+    //     $request->validate([
+    //         'email' => 'required|string', // يمكن أن يكون email أو username
+    //         'password' => 'required',
+    //     ]);
+
+    //     // تحديد ما إذا كان المدخل email أو username
+    //     $key = filter_var($request->email, FILTER_VALIDATE_EMAIL) ? 'email' : 'username';
+
+    //     // محاولة تسجيل الدخول
+    //     $attempt = [
+    //         $key => $request->email,
+    //         'password' => $request->password,
+    //     ];
+    //     //  dd(Auth::attempt($attempt));
+
+    //     if (Auth::attempt($attempt)) {
+
+    //         // التحقق من أن المستخدم مفعل وغير محظور
+    //         $user = Auth::user();
+
+    //         if ($user->is_active == 1 && $user->is_banned == 0) {
+
+    //             $request->session()->regenerate(); // تجديد session لمنع هجمات fixation
+    //             return redirect()->intended('/admin')->with('success', 'تم تسجيل الدخول بنجاح!'); // رسالة نجاح
+    //         } else {
+    //            // dd('test wrong');
+
+    //             // إذا كان المستخدم غير مفعل أو محظور
+    //             Auth::logout(); // تسجيل الخروج
+    //             return redirect()->back()->with('error', 'الحساب غير مفعل أو محظور.'); // رسالة خطأ
+    //         }
+    //     }
+    //     //   dd('test not ok');
+
+    //     // إذا فشل تسجيل الدخول
+    //     return redirect()->back()->with('error', 'بيانات الاعتماد غير صحيحة.'); // رسالة خطأ
+    // }
 
     public function logout(Request $request)
     {

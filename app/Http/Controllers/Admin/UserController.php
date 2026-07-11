@@ -56,15 +56,16 @@ class UserController extends Controller
         // رفع الصورة إذا تم رفعها
         if ($request->hasFile('avatar')) {
             $file = $request->file('avatar');
-            $filename = uniqid().'.'.$file->getClientOriginalExtension();
+            $filename = uniqid() . '.' . $file->getClientOriginalExtension();
             $path = $file->storeAs('users', $filename); // سيتم الحفظ في storage/app/users
             $data['image'] = $path;
         }
 
-    $user = User::create($data);
+        $user = User::create($data);
 
-    // 👇 إضافة الدور
-    $user->assignRole($request->role);
+        // 👇 إضافة الدور
+        $user->assignRole($request->role);
+
         return redirect()->route('admin.users.index')->with('success', 'تم إضافة المستخدم بنجاح');
     }
 
@@ -79,14 +80,15 @@ class UserController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
-public function edit(string $id)
-{
-    $user = User::findOrFail($id);
+    public function edit(string $id)
+    {
+        $user = User::findOrFail($id);
 
-    $roles = Role::all();
+        $roles = Role::all();
 
-    return view('admin.users.edit', compact('user', 'roles'));
-}
+        return view('admin.users.edit', compact('user', 'roles'));
+    }
+
     /**
      * Update the specified resource in storage.
      */
@@ -95,8 +97,8 @@ public function edit(string $id)
         // التحقق من صحة البيانات المدخلة
         $data = $request->validate([
             'full_name' => 'required|string|max:255',
-            'username' => 'required|string|max:255|unique:users,username,'.$id, // استثناء المستخدم الحالي
-            'email' => 'required|email|max:255|unique:users,email,'.$id, // استثناء البريد الإلكتروني الحالي
+            'username' => 'required|string|max:255|unique:users,username,' . $id, // استثناء المستخدم الحالي
+            'email' => 'required|email|max:255|unique:users,email,' . $id, // استثناء البريد الإلكتروني الحالي
             'phone' => 'nullable|string|max:20',
             'address' => 'nullable|string|max:255',
             'password' => 'nullable|string|confirmed|min:6', // كلمة المرور اختياري في التحديث
@@ -109,30 +111,31 @@ public function edit(string $id)
         // العثور على المستخدم
         $user = User::findOrFail($id);
 
-        // إذا كانت هناك كلمة مرور جديدة
-        if ($request->has('password')) {
-            $data['password'] = Hash::make($data['password']);
+        if ($request->filled('password')) {
+            $data['password'] = Hash::make($request->password);
+        } else {
+            unset($data['password']); // لا تقم بتحديث كلمة المرور
         }
         $data['name'] = $request->full_name;
 
         // رفع الصورة إذا تم رفعها
         if ($request->hasFile('avatar')) {
             // حذف الصورة القديمة إذا كانت موجودة
-            if ($user->image && file_exists(storage_path('app/public/'.$user->image))) {
-                unlink(storage_path('app/public/'.$user->image));
+            if ($user->image && file_exists(storage_path('app/public/' . $user->image))) {
+                unlink(storage_path('app/public/' . $user->image));
             }
 
             // رفع صورة جديدة
             $file = $request->file('avatar');
-            $filename = uniqid().'.'.$file->getClientOriginalExtension();
+            $filename = uniqid() . '.' . $file->getClientOriginalExtension();
             $path = $file->storeAs('users', $filename); // حفظ الصورة في الدليل المحدد
             $data['image'] = $path; // تحديث الصورة
         }
 
         // تحديث بيانات المستخدم
         $user->update($data);
-    $user->assignRole($request->role);
-        // إعادة التوجيه مع رسالة النجاح
+        $user->syncRoles([$request->role]);        // إعادة التوجيه مع رسالة النجاح
+
         return redirect()->route('admin.users.index')->with('success', 'تم تحديث بيانات المستخدم بنجاح');
     }
 

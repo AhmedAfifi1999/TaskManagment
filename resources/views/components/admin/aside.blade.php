@@ -57,14 +57,14 @@
                 </a>
             </li>
         @endcan
-        @can('view projects')
+        {{-- @can('view projects') --}}
             <li class="menu-item {{ request()->routeIs('admin.projects.index') ? 'active' : '' }}">
                 <a href="{{ route('admin.projects.index') }}" class="menu-link">
                     <i class="menu-icon tf-icons ti ti-layout-kanban"></i>
                     <div data-i18n="عرض المشاريع">عرض المشاريع</div>
                 </a>
             </li>
-        @endcan
+        {{-- @endcan --}}
         @can('view projects')
             <li class="menu-item {{ request()->routeIs('admin.management') ? 'active' : '' }}">
                 <a href="{{ route('admin.management') }}" class="menu-link">

@@ -61,7 +61,7 @@ Route::prefix('admin')->name('admin.')->middleware('auth')->group(function () {
         Route::prefix('{project}/tasks')->name('tasks.')->group(function () {
             Route::get('/', [ProjectTaskController::class, 'index'])->name('index'); // عرض جميع المهام
             Route::get('/display', [ProjectTaskController::class, 'display'])->name('display'); // عرض جميع المهام
-
+            Route::get('/show/{task}', [ProjectTaskController::class, 'show'])->name('show');
             Route::get('create', [ProjectTaskController::class, 'create'])->name('create'); // نموذج إضافة مهمة
             Route::post('/', [ProjectTaskController::class, 'store'])->name('store'); // حفظ المهمة
             Route::get('{task}/edit', [ProjectTaskController::class, 'edit'])->name('edit'); // تعديل المهمة

@@ -13,51 +13,35 @@ class ProjectController extends Controller
     //
     use AuthorizesRequests;
 
+   
     public function index()
-    {
-        $this->authorize('viewAny', Project::class);
+{
+    $this->authorize('viewAny', Project::class);
 
-        $user = auth()->user();
+    $user = auth()->user();
 
-        $query = Project::with('creator')->latest();
+    $query = Project::with('creator')->latest();
 
-        // إذا عنده صلاحية عرض كل المشاريع
-        if ($user->can('view projects')) {
+    // إذا كان لديه صلاحية عرض جميع المشاريع
+    if ($user->can('view projects')) {
+       $projects = $query->paginate(15);
 
-            $projects = $query->paginate(15);
+    } else {
 
-        } else {
-
-            // عنده فقط view own projects
-            $projects = $query
-                ->where(function ($q) use ($user) {
-                    $q->where('user_id', $user->id)
-                        ->orWhereHas('team', function ($team) use ($user) {
-                            $team->where('user_id', $user->id);
-                        });
-                })
-                ->paginate(15);
-        }
-
-        return view('admin.projects.index', compact('projects'));
+        // يرى المشاريع التي أنشأها أو التي هو عضو في فريقها
+        $projects = $query
+            ->where(function ($q) use ($user) {
+                $q->where('user_id', $user->id)
+                  ->orWhereHas('team', function ($team) use ($user) {
+                      $team->where('user_id', $user->id);
+                  });
+            })
+            ->paginate(15);
     }
-    // public function index()
-    // {
-    //     if (auth()->user()->isAdmin()) {
-    //         // إذا كان المستخدم أدمن، عرض جميع المشاريع
-    //         $projects = Project::with('creator')->latest()->paginate(10);
-    //     } else {
-    //         // إذا كان مستخدم عادي، عرض المشاريع التي أنشأها أو هو عضو فيها
-    //         $projects = Project::with('creator')->where('user_id', auth()->id())
-    //             ->orWhereHas('team', function ($query) {
-    //                 $query->where('user_id', auth()->id());
-    //             })
-    //             ->latest()
-    //             ->paginate(request('per_page', 15));
-    //     }
 
-    //     return view('admin.projects.index', compact('projects'));
-    // }
+    return view('admin.projects.index', compact('projects'));
+}
+   
 
     public function create()
     {
