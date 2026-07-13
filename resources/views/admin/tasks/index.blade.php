@@ -9,12 +9,17 @@
                         style="border-right: 5px solid {{ $project->color }};">
                         جميع مهام المشروع: {{ $project->name }}
                         <div>
-                            <a href="{{ route('admin.projects.tasks.create', $project->id) }}" class="btn btn-primary">
-                                <i class="fas fa-plus me-2"></i>إضافة مهمة
-                            </a>
-                            <a href="{{ route('admin.projects.tasks.display', $project->id) }}" class="btn btn-primary">
-                                <i class="fas fa-eye me-2"></i> عرض المهام
-                            </a>
+                            @can('create task')
+                                <a href="{{ route('admin.projects.tasks.create', $project->id) }}" class="btn btn-primary">
+                                    <i class="fas fa-plus me-2"></i> إضافة مهمة
+                                </a>
+                            @endcan
+
+                            @can('view own tasks')
+                                <a href="{{ route('admin.projects.tasks.display', $project->id) }}" class="btn btn-primary">
+                                    <i class="fas fa-eye me-2"></i> عرض المهام
+                                </a>
+                            @endcan
                         </div>
                     </h5>
                     <div class="card-body">
@@ -145,34 +150,41 @@
                                                     <i class="fas fa-ellipsis-v"></i>
                                                 </button>
                                                 <ul class="dropdown-menu">
-                                                    <li>
-                                                        <a class="dropdown-item"
-                                                            href="{{ route('admin.projects.tasks.show', [
-                                                                'project' => $project->id,
-                                                                'task' => $task->id,
-                                                            ]) }}">
-                                                            <i class="ti ti-eye me-2"></i>
-                                                            عرض
-                                                        </a>
-                                                    </li>
+                                                    @can('view own tasks')
+                                                        <li>
+                                                            <a class="dropdown-item"
+                                                                href="{{ route('admin.projects.tasks.show', [
+                                                                    'project' => $project->id,
+                                                                    'task' => $task->id,
+                                                                ]) }}">
+                                                                <i class="ti ti-eye me-2"></i>
+                                                                عرض
+                                                            </a>
+                                                        </li>
+                                                    @endcan
 
-                                                    <li>
-                                                        <a class="dropdown-item"
-                                                            href="{{ route('admin.projects.tasks.edit', [
-                                                                'project' => $project->id,
-                                                                'task' => $task->id,
-                                                            ]) }}">
-                                                            <i class="ti ti-edit me-2"></i>
-                                                            تعديل
-                                                        </a>
-                                                    </li>
+                                                    @can('edit task')
+                                                        <li>
+                                                            <a class="dropdown-item"
+                                                                href="{{ route('admin.projects.tasks.edit', [
+                                                                    'project' => $project->id,
+                                                                    'task' => $task->id,
+                                                                ]) }}">
+                                                                <i class="ti ti-edit me-2"></i>
+                                                                تعديل
+                                                            </a>
+                                                        </li>
+                                                    @endcan
 
-                                                    <li>
-                                                        <a href="#" class="dropdown-item text-danger delete-task-btn">
-                                                            <i class="ti ti-trash me-2"></i>
-                                                            حذف
-                                                        </a>
-                                                    </li>
+                                                    @can('task.delete')
+                                                        <li>
+                                                            <a href="#" class="dropdown-item text-danger delete-task-btn">
+                                                                <i class="ti ti-trash me-2"></i>
+                                                                حذف
+                                                            </a>
+                                                        </li>
+                                                    @endcan
+
                                                 </ul>
                                                 <style>
                                                     .dropdown-item.text-danger:hover {

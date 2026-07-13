@@ -7,7 +7,11 @@
                 <div class="card">
                     <h5 class="card-header d-flex justify-content-between align-items-center">
                         قائمة المشاريع
-                        <a href="{{ route('admin.projects.create') }}" class="btn btn-primary">إضافة مشروع جديد</a>
+                        @can('create projects')
+                            <a href="{{ route('admin.projects.create') }}" class="btn btn-primary">
+                                إضافة مشروع جديد
+                            </a>
+                        @endcan
                     </h5>
                     <div class="table-responsive text-nowrap">
                         <table class="table">
@@ -93,11 +97,10 @@
                                                         <i class="fas fa-tasks"></i> عرض المهام
                                                     </a>
                                                     @can('update', $project)
-
-                                                    <a class="dropdown-item"
-                                                        href="{{ route('admin.projects.edit', $project->id) }}">
-                                                        <i class="ti ti-pencil me-1"></i> تعديل
-                                                    </a>
+                                                        <a class="dropdown-item"
+                                                            href="{{ route('admin.projects.edit', $project->id) }}">
+                                                            <i class="ti ti-pencil me-1"></i> تعديل
+                                                        </a>
                                                     @endcan
 
                                                     @can('delete', $project)
