@@ -19,7 +19,7 @@
                                         <label for="upload" class="btn btn-primary me-3 mb-4" tabindex="0">
                                             <span class="d-none d-sm-block">رفع صورة جديدة</span>
                                             <i class="ti ti-upload d-block d-sm-none"></i>
-                                            <input type="file" id="upload" name="image" class="account-file-input"
+                                            <input type="file" id="upload" name="avatar" class="account-file-input"
                                                 hidden accept="image/png, image/jpeg" />
                                         </label>
                                         <button type="button" class="btn btn-label-secondary account-image-reset mb-4">

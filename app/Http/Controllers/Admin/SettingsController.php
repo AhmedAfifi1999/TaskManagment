@@ -69,40 +69,38 @@ class SettingsController extends Controller
         return view('admin.settings.account', compact('user'));
     }
 
-    public function accountUpdate(Request $request)
-    {
-        $validated = $request->validate([
-            'full_name' => 'required|string|max:255',
-            'username' => 'required|string|max:255|unique:users,username,' . auth()->id(),
-            'email' => 'required|email|unique:users,email,' . auth()->id(),
-            'phone' => 'required|string|max:20',
-            'address' => 'nullable|string|max:255',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg|max:800',
-        ]);
+public function accountUpdate(Request $request)
+{
+    $validated = $request->validate([
+        'full_name' => 'required|string|max:255',
+        'username' => 'required|string|max:255|unique:users,username,' . auth()->id(),
+        'email' => 'required|email|unique:users,email,' . auth()->id(),
+        'phone' => 'required|string|max:20',
+        'address' => 'nullable|string|max:255',
+        'avatar' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
+    ]);
 
-        $user = Auth::user();
+    $user = Auth::user();
 
-        $user->update([
-            'name' => $request->full_name,
-            'username' => $request->username,
-            'email' => $request->email,
-            'phone' => $request->phone,
-            'address' => $request->address,
-        ]);
+    $user->name = $validated['full_name'];
+    $user->username = $validated['username'];
+    $user->email = $validated['email'];
+    $user->phone = $validated['phone'];
+    $user->address = $validated['address'] ?? null;
 
-        if ($request->hasFile('image')) {
-            if ($user->image) {
-                Storage::disk('public')->delete($user->image);
-            }
+if ($request->hasFile('avatar')) {
+    $file = $request->file('avatar');
+    $filename = uniqid() . '.' . $file->getClientOriginalExtension();
 
-            $imagePath = $request->file('image')->store('users/image', 'public');
-            $user->image = $imagePath;
-            $user->save();
-        }
+    $path = $file->storeAs('users', $filename, 'public');
 
-        return redirect()->back()->with('success', 'تم تحديث بيانات الحساب بنجاح');
-    }
+    $data['image'] = $path;
+}
 
+    $user->save();
+
+    return redirect()->back()->with('success', 'تم تحديث بيانات الحساب بنجاح');
+}
     /**
      * تحديث الإعدادات.
      */

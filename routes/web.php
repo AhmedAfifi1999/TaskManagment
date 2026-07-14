@@ -12,6 +12,7 @@ use App\Http\Controllers\ProjectsController;
 use App\Http\Controllers\TasksController;
 use App\Http\Controllers\Website\MainController;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Auth;
 
 // Route::get('/', [HomeController::class, 'index'])->name('home.index');
 
@@ -110,12 +111,26 @@ Route::prefix('tasks')->group(function () {
     Route::get('filter', [TasksController::class, 'filter'])->name('tasks.filter');
     Route::post('update-priority', [TasksController::class, 'updatePriority'])->name('tasks.updatePriority');
 });
-Route::get('/secure-image/{path}', function ($path) {
-    $fullPath = storage_path('app/'.$path);
 
-    if (! file_exists($fullPath)) {
-        abort(404);
+Route::get('/secure-image/{path}', function ($path) {
+
+    abort_unless(Auth::check(), 401);
+
+    $user = Auth::user();
+
+    // السماح للإدمن والفل أدمن بمشاهدة جميع الصور
+    if (! $user->hasAnyRole(['admin', 'full admin'])) {
+
+        // باقي المستخدمين يمكنهم مشاهدة صورتهم فقط
+        abort_unless($user->image === $path, 403);
     }
 
+    $fullPath = storage_path('app/public/' . $path);
+
+    abort_unless(file_exists($fullPath), 404);
+
     return response()->file($fullPath);
-})->where('path', '.*')->name('secure.image');
+
+})->where('path', '.*')
+  ->middleware('auth')
+  ->name('secure.image');

@@ -56,12 +56,12 @@ class UserController extends Controller
         // رفع الصورة إذا تم رفعها
         if ($request->hasFile('avatar')) {
             $file = $request->file('avatar');
-            $filename = uniqid() . '.' . $file->getClientOriginalExtension();
-            $path = $file->storeAs('users', $filename); // سيتم الحفظ في storage/app/users
-            $data['image'] = $path;
-        }
+            $filename = uniqid().'.'.$file->getClientOriginalExtension();
 
-        $user = User::create($data);
+            $path = $file->storeAs('users', $filename, 'public');
+
+            $data['image'] = $path;
+        }        $user = User::create($data);
 
         // 👇 إضافة الدور
         $user->assignRole($request->role);
@@ -97,8 +97,8 @@ class UserController extends Controller
         // التحقق من صحة البيانات المدخلة
         $data = $request->validate([
             'full_name' => 'required|string|max:255',
-            'username' => 'required|string|max:255|unique:users,username,' . $id, // استثناء المستخدم الحالي
-            'email' => 'required|email|max:255|unique:users,email,' . $id, // استثناء البريد الإلكتروني الحالي
+            'username' => 'required|string|max:255|unique:users,username,'.$id, // استثناء المستخدم الحالي
+            'email' => 'required|email|max:255|unique:users,email,'.$id, // استثناء البريد الإلكتروني الحالي
             'phone' => 'nullable|string|max:20',
             'address' => 'nullable|string|max:255',
             'password' => 'nullable|string|confirmed|min:6', // كلمة المرور اختياري في التحديث
@@ -120,21 +120,23 @@ class UserController extends Controller
 
         // رفع الصورة إذا تم رفعها
         if ($request->hasFile('avatar')) {
-            // حذف الصورة القديمة إذا كانت موجودة
-            if ($user->image && file_exists(storage_path('app/public/' . $user->image))) {
-                unlink(storage_path('app/public/' . $user->image));
+
+            if ($user->image && file_exists(storage_path('app/public/'.$user->image))) {
+                unlink(storage_path('app/public/'.$user->image));
             }
 
-            // رفع صورة جديدة
             $file = $request->file('avatar');
-            $filename = uniqid() . '.' . $file->getClientOriginalExtension();
-            $path = $file->storeAs('users', $filename); // حفظ الصورة في الدليل المحدد
-            $data['image'] = $path; // تحديث الصورة
+
+            $filename = uniqid().'.'.$file->getClientOriginalExtension();
+
+            $path = $file->storeAs('users', $filename, 'public');
+
+            $data['image'] = $path;
         }
 
         // تحديث بيانات المستخدم
         $user->update($data);
-        $user->syncRoles([$request->role]);        // إعادة التوجيه مع رسالة النجاح
+        $user->syncRoles([$request->role]);
 
         return redirect()->route('admin.users.index')->with('success', 'تم تحديث بيانات المستخدم بنجاح');
     }

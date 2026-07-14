@@ -267,7 +267,18 @@
             <li class="nav-item navbar-dropdown dropdown-user dropdown">
                 <a class="nav-link dropdown-toggle hide-arrow p-0" href="javascript:void(0);" data-bs-toggle="dropdown">
                     <div class="avatar avatar-online">
-                        <img src="{{ asset('cp/assets/img/avatars/1.png') }}" alt class="rounded-circle" />
+                                        @auth
+                                            @if (auth()->user()->image)
+                                                <img src="{{ route('secure.image', ['path' => auth()->user()->image]) }}"
+                                                    alt="صورة المستخدم" class="rounded-circle" />
+                                            @else
+                                                <img src="{{ asset('cp/assets/img/avatars/1.png') }}" alt="صورة افتراضية"
+                                                    class="rounded-circle" />
+                                            @endif
+                                        @else
+                                            <img src="{{ asset('cp/assets/img/avatars/1.png') }}" alt="زائر"
+                                                class="rounded-circle" />
+                                        @endauth
                     </div>
                 </a>
                 <ul class="dropdown-menu dropdown-menu-end">
@@ -278,7 +289,7 @@
                                     <div class="avatar avatar-online">
                                         @auth
                                             @if (auth()->user()->image)
-                                                <img src="{{ asset('storage/' . auth()->user()->profile_photo_path) }}"
+                                                <img src="{{ route('secure.image', ['path' => auth()->user()->image]) }}"
                                                     alt="صورة المستخدم" class="rounded-circle" />
                                             @else
                                                 <img src="{{ asset('cp/assets/img/avatars/1.png') }}" alt="صورة افتراضية"
