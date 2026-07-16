@@ -283,7 +283,7 @@
                 </a>
                 <ul class="dropdown-menu dropdown-menu-end">
                     <li>
-                        <a class="dropdown-item mt-0" href="pages-account-settings-account.html">
+                        <a class="dropdown-item mt-0" href="{{ route('admin.settings.account') }}">
                             <div class="d-flex align-items-center">
                                 <div class="flex-shrink-0 me-2">
                                     <div class="avatar avatar-online">

@@ -9,6 +9,8 @@ use App\Models\User;
 use App\Notifications\TaskAssignedNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use App\Notifications\TaskStatusChangedNotification;
+use Illuminate\Support\Facades\Auth;
 
 class ProjectTaskController extends Controller
 {
@@ -53,7 +55,6 @@ class ProjectTaskController extends Controller
     {
         $project = Project::with('team')->findOrFail($projectId);
 
-
         $task = Task::with([
             'user',
             'projectTask.creator',
@@ -86,7 +87,7 @@ class ProjectTaskController extends Controller
 
     public function create($projectId)
     {
-        $project = Project::wsith('team')->find($projectId);
+        $project = Project::with('team')->find($projectId);
 
         $this->authorizeProject($project);
 
@@ -240,6 +241,9 @@ class ProjectTaskController extends Controller
         ]);
         $task = Task::find($TaskId);
         $task->update(['status' => $validated['status']]);
+        $task->user->notify(
+            new TaskStatusChangedNotification($task, Auth::user())
+        );
 
         return response()->json(['success' => true]);
     }

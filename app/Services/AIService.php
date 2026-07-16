@@ -13,32 +13,106 @@ class AIService
     private string  $fallbackModel = 'gemini-2.5-flash';
     private string  $baseUrl       = 'https://generativelanguage.googleapis.com/v1beta/models/';
 
+    // ─────────────────────────────────────────────────────────────
+    // INTENT RULES — ordered from MOST specific to MOST general
+    // Each rule: [query_id, required_signals[], context_signals[]]
+    // ALL required_signals must appear AND at least one context_signal
+    // ─────────────────────────────────────────────────────────────
+    private array $intentRules = [
+
+        // ── إحصائيات ──────────────────────────────────────────────
+        ['my_stats', ['إحصائيات', 'ملخص', 'نظرة عامة', 'داشبورد', 'وضعي', 'تقريري'], []],
+
+        // ── مهام متأخرة ───────────────────────────────────────────
+        ['my_tasks_overdue', ['متأخر'],          ['مهام', 'مهمة', 'مهامي']],
+        ['my_tasks_overdue', ['فات وقت'],        []],
+        ['my_tasks_overdue', ['فاتت'],           ['مهام', 'مهمة', 'مهامي']],
+        ['my_tasks_overdue', ['overdue'],        []],
+
+        // ── مهام منتهية / مكتملة ───────────────────────────────────
+        ['my_tasks_completed', ['منتهية'],       ['مهام', 'مهمة', 'مهامي']],
+        ['my_tasks_completed', ['مكتمل'],        ['مهام', 'مهمة', 'مهامي']],
+        ['my_tasks_completed', ['منجز'],         ['مهام', 'مهمة', 'مهامي']],
+        ['my_tasks_completed', ['خلصت', 'خلصتها', 'انتهيت منها'], ['مهام', 'مهمة', 'مهامي']],
+        ['my_tasks_completed', ['completed'],    ['task']],
+
+        // ── مهام لم تبدأ / معلقة ──────────────────────────────────
+        ['my_tasks_pending', ['لم تبدأ', 'لم أبدأ'], []],
+        ['my_tasks_pending', ['معلق'],           ['مهام', 'مهمة', 'مهامي']],
+        ['my_tasks_pending', ['ما بدأت'],        []],
+        ['my_tasks_pending', ['غير مكتمل'],      ['مهام', 'مهمة', 'مهامي']],
+        ['my_tasks_pending', ['لسا ما'],         ['مهام', 'مهمة']],
+        ['my_tasks_pending', ['pending'],        ['task']],
+
+        // ── مهام جارية / نشطة ─────────────────────────────────────
+        ['my_tasks_active', ['جاري', 'جارية'],  ['مهام', 'مهمة', 'مهامي']],
+        ['my_tasks_active', ['قيد التنفيذ'],    []],
+        ['my_tasks_active', ['نشط', 'نشطة'],    ['مهام', 'مهمة', 'مهامي']],
+        ['my_tasks_active', ['in progress'],    []],
+
+        // ── مهام قريبة الانتهاء ────────────────────────────────────
+        ['my_tasks_due_soon', ['قريب', 'قريبة'], ['مهام', 'مهمة', 'مهامي', 'انتهاء']],
+        ['my_tasks_due_soon', ['هذا الأسبوع'],  ['مهام', 'مهمة']],
+        ['my_tasks_due_soon', ['عاجلة'],        ['مهام', 'مهمة', 'مهامي']],
+        ['my_tasks_due_soon', ['due soon'],     []],
+
+        // ── عدد المهام ────────────────────────────────────────────
+        ['my_tasks_count', ['كم', 'عدد'],       ['مهمة', 'مهام', 'مهامي']],
+        ['my_tasks_count', ['إحصاء'],           ['مهمة', 'مهام']],
+
+        // ── أسماء المهام فقط ──────────────────────────────────────
+        ['my_tasks', ['اسماء', 'أسماء'],        ['مهمة', 'مهام', 'مهامي']],
+
+        // ── جميع المهام (عام) ─────────────────────────────────────
+        ['my_tasks', ['مهامي'],                 []],
+        ['my_tasks', ['مهام'],                  ['كل', 'جميع', 'عرض', 'اعرض', 'اظهر']],
+        ['my_tasks', ['tasks'],                 []],
+
+        // ══ مشاريع ════════════════════════════════════════════════
+
+        // ── مشاريع مكتملة ─────────────────────────────────────────
+        ['my_projects_completed', ['مكتمل'],    ['مشروع', 'مشاريع', 'مشاريعي']],
+        ['my_projects_completed', ['خلصت', 'انتهيت'], ['مشروع', 'مشاريع']],
+        ['my_projects_completed', ['completed'], ['project']],
+
+        // ── مشاريع نشطة ───────────────────────────────────────────
+        ['my_projects_active', ['نشط', 'نشطة'], ['مشروع', 'مشاريع', 'مشاريعي']],
+        ['my_projects_active', ['جاري', 'جارية'], ['مشروع', 'مشاريع']],
+        ['my_projects_active', ['active'],      ['project']],
+
+        // ── عدد المشاريع ──────────────────────────────────────────
+        ['my_projects_count', ['كم', 'عدد'],   ['مشروع', 'مشاريع', 'مشاريعي']],
+        ['my_projects_count', ['إحصاء'],        ['مشروع', 'مشاريع']],
+
+        // ── جميع المشاريع (عام) ───────────────────────────────────
+        ['my_projects', ['مشاريعي'],            []],
+        ['my_projects', ['مشاريع'],             ['كل', 'جميع', 'عرض', 'اعرض', 'اظهر']],
+        ['my_projects', ['projects'],           []],
+    ];
+
     private array $queryLibrary = [
 
-        // ─── إحصائيات شاملة ──────────────────────────────────────
+        // ─── إحصائيات شاملة ───────────────────────────────────────
         [
-            'id'          => 'my_stats',
-            'description' => 'إحصائياتي / ملخصي / نظرة عامة / dashboard',
-            'sql'         => "
+            'id'  => 'my_stats',
+            'sql' => "
                 SELECT
-                    (SELECT COUNT(*) FROM tasks WHERE user_id = :user_id AND deleted_at IS NULL) as total_tasks,
-                    (SELECT COUNT(*) FROM tasks WHERE user_id = :user_id AND is_completed = 1 AND deleted_at IS NULL) as completed_tasks,
-                    (SELECT COUNT(*) FROM tasks WHERE user_id = :user_id AND is_completed = 0 AND deleted_at IS NULL) as pending_tasks,
-                    (SELECT COUNT(*) FROM tasks WHERE user_id = :user_id AND is_completed = 0 AND end_time < NOW() AND deleted_at IS NULL) as overdue_tasks,
-                    (SELECT COUNT(*) FROM tasks WHERE user_id = :user_id AND is_completed = 0 AND end_time >= NOW() AND end_time <= DATE_ADD(NOW(), INTERVAL 7 DAY) AND deleted_at IS NULL) as due_this_week,
-                    (SELECT COUNT(*) FROM project_user WHERE user_id = :user_id) as total_projects,
-                    (SELECT COUNT(*) FROM project_user pu JOIN projects p ON p.id = pu.project_id WHERE pu.user_id = :user_id AND p.status = 'completed' AND p.deleted_at IS NULL) as completed_projects,
-                    (SELECT COUNT(*) FROM project_user pu JOIN projects p ON p.id = pu.project_id WHERE pu.user_id = :user_id AND p.status = 'active' AND p.deleted_at IS NULL) as active_projects
+                    (SELECT COUNT(*) FROM tasks WHERE user_id = :uid AND deleted_at IS NULL) as total_tasks,
+                    (SELECT COUNT(*) FROM tasks WHERE user_id = :uid AND is_completed = 1 AND deleted_at IS NULL) as completed_tasks,
+                    (SELECT COUNT(*) FROM tasks WHERE user_id = :uid AND is_completed = 0 AND deleted_at IS NULL) as pending_tasks,
+                    (SELECT COUNT(*) FROM tasks WHERE user_id = :uid AND is_completed = 0 AND end_time < NOW() AND deleted_at IS NULL) as overdue_tasks,
+                    (SELECT COUNT(*) FROM tasks WHERE user_id = :uid AND is_completed = 0 AND end_time >= NOW() AND end_time <= DATE_ADD(NOW(), INTERVAL 7 DAY) AND deleted_at IS NULL) as due_this_week,
+                    (SELECT COUNT(*) FROM project_user WHERE user_id = :uid) as total_projects,
+                    (SELECT COUNT(*) FROM project_user pu JOIN projects p ON p.id = pu.project_id WHERE pu.user_id = :uid AND p.status = 'completed' AND p.deleted_at IS NULL) as completed_projects,
+                    (SELECT COUNT(*) FROM project_user pu JOIN projects p ON p.id = pu.project_id WHERE pu.user_id = :uid AND p.status = 'active' AND p.deleted_at IS NULL) as active_projects
             ",
         ],
 
-        // ─── مهام المستخدم ────────────────────────────────────────
+        // ─── مهام المستخدم ─────────────────────────────────────────
         [
-            'id'          => 'my_tasks',
-            'description' => 'مهامي / المهام المسندة إليّ / شو المهام الي علي / عرض مهامي / كل مهامي',
-            'sql'         => "
+            'id'  => 'my_tasks',
+            'sql' => "
                 SELECT
-                    id,
                     name        as الاسم,
                     CASE status
                         WHEN 'pending'     THEN '🕐 معلقة'
@@ -54,14 +128,13 @@ class AIService
                     END          as الأولوية,
                     DATE_FORMAT(end_time, '%Y-%m-%d') as تاريخ_الانتهاء,
                     CASE
-                        WHEN end_time IS NULL           THEN '—'
-                        WHEN is_completed = 1           THEN '✅ منجزة'
-                        WHEN end_time < NOW()           THEN CONCAT('⚠️ متأخرة ', DATEDIFF(NOW(), end_time), ' يوم')
+                        WHEN end_time IS NULL      THEN '—'
+                        WHEN is_completed = 1      THEN '✅ منجزة'
+                        WHEN end_time < NOW()      THEN CONCAT('⚠️ متأخرة ', DATEDIFF(NOW(), end_time), ' يوم')
                         ELSE CONCAT('⏳ باقي ', DATEDIFF(end_time, NOW()), ' يوم')
                     END          as الوضع
                 FROM tasks
-                WHERE user_id = :user_id
-                  AND deleted_at IS NULL
+                WHERE user_id = :uid AND deleted_at IS NULL
                 ORDER BY
                     CASE WHEN end_time < NOW() AND is_completed = 0 THEN 0 ELSE 1 END,
                     end_time ASC
@@ -69,222 +142,131 @@ class AIService
             ",
         ],
         [
-            'id'          => 'my_tasks_active',
-            'description' => 'مهامي النشطة / الجارية / قيد التنفيذ',
-            'sql'         => "
-                SELECT
-                    id,
-                    name        as الاسم,
-                    CASE priority
-                        WHEN 'high'   THEN '🔴 عالية'
-                        WHEN 'medium' THEN '🟡 متوسطة'
-                        WHEN 'low'    THEN '🟢 منخفضة'
-                        ELSE priority
-                    END          as الأولوية,
+            'id'  => 'my_tasks_active',
+            'sql' => "
+                SELECT name as الاسم,
+                    CASE priority WHEN 'high' THEN '🔴 عالية' WHEN 'medium' THEN '🟡 متوسطة' ELSE '🟢 منخفضة' END as الأولوية,
                     DATE_FORMAT(end_time, '%Y-%m-%d') as تاريخ_الانتهاء,
-                    CASE
-                        WHEN end_time IS NULL  THEN '—'
-                        WHEN end_time < NOW()  THEN CONCAT('⚠️ متأخرة ', DATEDIFF(NOW(), end_time), ' يوم')
-                        ELSE CONCAT('⏳ باقي ', DATEDIFF(end_time, NOW()), ' يوم')
-                    END          as الوضع
-                FROM tasks
-                WHERE user_id = :user_id
-                  AND is_completed = 0
-                  AND deleted_at IS NULL
-                ORDER BY end_time ASC
-                LIMIT 30
+                    CASE WHEN end_time IS NULL THEN '—' WHEN end_time < NOW() THEN CONCAT('⚠️ متأخرة ', DATEDIFF(NOW(), end_time), ' يوم') ELSE CONCAT('⏳ باقي ', DATEDIFF(end_time, NOW()), ' يوم') END as الوضع
+                FROM tasks WHERE user_id = :uid AND is_completed = 0 AND deleted_at IS NULL
+                ORDER BY end_time ASC LIMIT 30
             ",
         ],
         [
-            'id'          => 'my_tasks_pending',
-            'description' => 'مهامي غير المكتملة / المهام المعلقة',
-            'sql'         => "
-                SELECT
-                    id,
-                    name        as الاسم,
-                    CASE priority
-                        WHEN 'high'   THEN '🔴 عالية'
-                        WHEN 'medium' THEN '🟡 متوسطة'
-                        WHEN 'low'    THEN '🟢 منخفضة'
-                        ELSE priority
-                    END          as الأولوية,
+            'id'  => 'my_tasks_pending',
+            'sql' => "
+                SELECT name as الاسم,
+                    CASE priority WHEN 'high' THEN '🔴 عالية' WHEN 'medium' THEN '🟡 متوسطة' ELSE '🟢 منخفضة' END as الأولوية,
                     DATE_FORMAT(end_time, '%Y-%m-%d') as تاريخ_الانتهاء
-                FROM tasks
-                WHERE user_id = :user_id
-                  AND is_completed = 0
-                  AND deleted_at IS NULL
-                ORDER BY end_time ASC
-                LIMIT 30
+                FROM tasks WHERE user_id = :uid AND is_completed = 0 AND deleted_at IS NULL
+                ORDER BY end_time ASC LIMIT 30
             ",
         ],
         [
-            'id'          => 'my_tasks_due_soon',
-            'description' => 'مهامي القريبة الانتهاء / مهام تاريخ انتهائها قريب / المهام العاجلة / هذا الأسبوع',
-            'sql'         => "
-                SELECT
-                    id,
-                    name        as الاسم,
-                    CASE priority
-                        WHEN 'high'   THEN '🔴 عالية'
-                        WHEN 'medium' THEN '🟡 متوسطة'
-                        WHEN 'low'    THEN '🟢 منخفضة'
-                        ELSE priority
-                    END          as الأولوية,
+            'id'  => 'my_tasks_due_soon',
+            'sql' => "
+                SELECT name as الاسم,
+                    CASE priority WHEN 'high' THEN '🔴 عالية' WHEN 'medium' THEN '🟡 متوسطة' ELSE '🟢 منخفضة' END as الأولوية,
                     DATE_FORMAT(end_time, '%Y-%m-%d') as تاريخ_الانتهاء,
                     CONCAT('⏳ باقي ', DATEDIFF(end_time, NOW()), ' يوم') as الوضع
                 FROM tasks
-                WHERE user_id = :user_id
-                  AND is_completed = 0
-                  AND end_time IS NOT NULL
-                  AND end_time >= NOW()
+                WHERE user_id = :uid AND is_completed = 0
+                  AND end_time IS NOT NULL AND end_time >= NOW()
                   AND deleted_at IS NULL
-                ORDER BY end_time ASC
-                LIMIT 15
+                ORDER BY end_time ASC LIMIT 15
             ",
         ],
         [
-            'id'          => 'my_tasks_overdue',
-            'description' => 'مهامي المتأخرة / المهام منتهية الصلاحية / المهام المتأخرة',
-            'sql'         => "
-                SELECT
-                    id,
-                    name        as الاسم,
-                    CASE priority
-                        WHEN 'high'   THEN '🔴 عالية'
-                        WHEN 'medium' THEN '🟡 متوسطة'
-                        WHEN 'low'    THEN '🟢 منخفضة'
-                        ELSE priority
-                    END          as الأولوية,
+            'id'  => 'my_tasks_overdue',
+            'sql' => "
+                SELECT name as الاسم,
+                    CASE priority WHEN 'high' THEN '🔴 عالية' WHEN 'medium' THEN '🟡 متوسطة' ELSE '🟢 منخفضة' END as الأولوية,
                     DATE_FORMAT(end_time, '%Y-%m-%d') as تاريخ_الانتهاء,
                     CONCAT('⚠️ متأخرة ', DATEDIFF(NOW(), end_time), ' يوم') as الوضع
                 FROM tasks
-                WHERE user_id = :user_id
-                  AND is_completed = 0
-                  AND end_time IS NOT NULL
-                  AND end_time < NOW()
+                WHERE user_id = :uid AND is_completed = 0
+                  AND end_time IS NOT NULL AND end_time < NOW()
                   AND deleted_at IS NULL
-                ORDER BY end_time ASC
-                LIMIT 15
+                ORDER BY end_time ASC LIMIT 15
             ",
         ],
         [
-            'id'          => 'my_tasks_completed',
-            'description' => 'مهامي المكتملة / المنجزة',
-            'sql'         => "
-                SELECT
-                    id,
-                    name        as الاسم,
+            'id'  => 'my_tasks_completed',
+            'sql' => "
+                SELECT name as الاسم,
                     DATE_FORMAT(updated_at, '%Y-%m-%d') as تاريخ_الإنجاز,
-                    CASE priority
-                        WHEN 'high'   THEN '🔴 عالية'
-                        WHEN 'medium' THEN '🟡 متوسطة'
-                        WHEN 'low'    THEN '🟢 منخفضة'
-                        ELSE priority
-                    END          as الأولوية
-                FROM tasks
-                WHERE user_id = :user_id
-                  AND is_completed = 1
-                  AND deleted_at IS NULL
-                ORDER BY updated_at DESC
-                LIMIT 20
+                    CASE priority WHEN 'high' THEN '🔴 عالية' WHEN 'medium' THEN '🟡 متوسطة' ELSE '🟢 منخفضة' END as الأولوية
+                FROM tasks WHERE user_id = :uid AND is_completed = 1 AND deleted_at IS NULL
+                ORDER BY updated_at DESC LIMIT 20
             ",
         ],
         [
-            'id'          => 'my_tasks_count',
-            'description' => 'عدد مهامي / كم مهمة عندي / إحصاء مهامي',
-            'sql'         => "
+            'id'  => 'my_tasks_count',
+            'sql' => "
                 SELECT
-                    COUNT(*)                                                      as إجمالي_المهام,
-                    SUM(is_completed)                                             as المكتملة,
-                    SUM(CASE WHEN is_completed = 0 THEN 1 ELSE 0 END)            as غير_المكتملة,
+                    COUNT(*) as إجمالي_المهام,
+                    SUM(is_completed) as المكتملة,
+                    SUM(CASE WHEN is_completed = 0 THEN 1 ELSE 0 END) as غير_المكتملة,
                     SUM(CASE WHEN is_completed = 0 AND end_time < NOW() AND end_time IS NOT NULL THEN 1 ELSE 0 END) as المتأخرة
-                FROM tasks
-                WHERE user_id = :user_id
-                  AND deleted_at IS NULL
+                FROM tasks WHERE user_id = :uid AND deleted_at IS NULL
             ",
         ],
 
-        // ─── مشاريع المستخدم ──────────────────────────────────────
+        // ─── مشاريع المستخدم ───────────────────────────────────────
         [
-            'id'          => 'my_projects',
-            'description' => 'مشاريعي / المشاريع التي أنا عضو فيها / شو المشاريع الي شغال عليها / كل مشاريعي',
-            'sql'         => "
-                SELECT
-                    p.id,
-                    p.name       as الاسم,
-                    CASE p.status
-                        WHEN 'active'    THEN '🟢 نشط'
-                        WHEN 'completed' THEN '✅ مكتمل'
-                        WHEN 'on_hold'   THEN '⏸️ متوقف'
-                        ELSE p.status
-                    END           as الحالة,
+            'id'  => 'my_projects',
+            'sql' => "
+                SELECT p.name as الاسم,
+                    CASE p.status WHEN 'active' THEN '🟢 نشط' WHEN 'completed' THEN '✅ مكتمل' WHEN 'on_hold' THEN '⏸️ متوقف' ELSE p.status END as الحالة,
                     DATE_FORMAT(p.start_date, '%Y-%m-%d') as تاريخ_البدء,
                     DATE_FORMAT(p.end_date,   '%Y-%m-%d') as تاريخ_الانتهاء,
-                    (SELECT COUNT(*) FROM tasks t WHERE t.project = p.id AND t.deleted_at IS NULL)              as إجمالي_المهام,
+                    (SELECT COUNT(*) FROM tasks t WHERE t.project = p.id AND t.deleted_at IS NULL) as إجمالي_المهام,
                     (SELECT COUNT(*) FROM tasks t WHERE t.project = p.id AND t.is_completed = 1 AND t.deleted_at IS NULL) as المهام_المكتملة
                 FROM projects p
                 INNER JOIN project_user pu ON pu.project_id = p.id
-                WHERE pu.user_id = :user_id
-                  AND p.deleted_at IS NULL
-                ORDER BY p.created_at DESC
-                LIMIT 30
+                WHERE pu.user_id = :uid AND p.deleted_at IS NULL
+                ORDER BY p.created_at DESC LIMIT 30
             ",
         ],
         [
-            'id'          => 'my_projects_active',
-            'description' => 'مشاريعي النشطة / المشاريع التي أعمل عليها الآن / المشاريع الجارية',
-            'sql'         => "
-                SELECT
-                    p.id,
-                    p.name       as الاسم,
+            'id'  => 'my_projects_active',
+            'sql' => "
+                SELECT p.name as الاسم,
                     DATE_FORMAT(p.start_date, '%Y-%m-%d') as تاريخ_البدء,
                     DATE_FORMAT(p.end_date,   '%Y-%m-%d') as تاريخ_الانتهاء,
-                    (SELECT COUNT(*) FROM tasks t WHERE t.project = p.id AND t.deleted_at IS NULL)              as إجمالي_المهام,
+                    (SELECT COUNT(*) FROM tasks t WHERE t.project = p.id AND t.deleted_at IS NULL) as إجمالي_المهام,
                     (SELECT COUNT(*) FROM tasks t WHERE t.project = p.id AND t.is_completed = 1 AND t.deleted_at IS NULL) as المهام_المكتملة,
-                    CASE
-                        WHEN p.end_date IS NULL   THEN '—'
-                        WHEN p.end_date < NOW()   THEN CONCAT('⚠️ متأخر ', DATEDIFF(NOW(), p.end_date), ' يوم')
-                        ELSE CONCAT('⏳ باقي ', DATEDIFF(p.end_date, NOW()), ' يوم')
-                    END           as الوضع
+                    CASE WHEN p.end_date IS NULL THEN '—' WHEN p.end_date < NOW() THEN CONCAT('⚠️ متأخر ', DATEDIFF(NOW(), p.end_date), ' يوم') ELSE CONCAT('⏳ باقي ', DATEDIFF(p.end_date, NOW()), ' يوم') END as الوضع
                 FROM projects p
                 INNER JOIN project_user pu ON pu.project_id = p.id
-                WHERE pu.user_id = :user_id
-                  AND p.status = 'active'
-                  AND p.deleted_at IS NULL
+                WHERE pu.user_id = :uid AND p.status = 'active' AND p.deleted_at IS NULL
                 ORDER BY p.end_date ASC
             ",
         ],
         [
-            'id'          => 'my_projects_completed',
-            'description' => 'مشاريعي المكتملة / المشاريع التي انتهيت منها / خلصت',
-            'sql'         => "
-                SELECT
-                    p.id,
-                    p.name       as الاسم,
+            'id'  => 'my_projects_completed',
+            'sql' => "
+                SELECT p.name as الاسم,
                     DATE_FORMAT(p.start_date, '%Y-%m-%d') as تاريخ_البدء,
                     DATE_FORMAT(p.end_date,   '%Y-%m-%d') as تاريخ_الانتهاء,
                     (SELECT COUNT(*) FROM tasks t WHERE t.project = p.id AND t.deleted_at IS NULL) as إجمالي_المهام
                 FROM projects p
                 INNER JOIN project_user pu ON pu.project_id = p.id
-                WHERE pu.user_id = :user_id
-                  AND p.status = 'completed'
-                  AND p.deleted_at IS NULL
+                WHERE pu.user_id = :uid AND p.status = 'completed' AND p.deleted_at IS NULL
                 ORDER BY p.end_date DESC
             ",
         ],
         [
-            'id'          => 'my_projects_count',
-            'description' => 'عدد مشاريعي / كم مشروع عندي / إحصاء مشاريعي',
-            'sql'         => "
+            'id'  => 'my_projects_count',
+            'sql' => "
                 SELECT
-                    COUNT(*)                                                                              as إجمالي_المشاريع,
-                    SUM(CASE WHEN p.status = 'active'    THEN 1 ELSE 0 END)                              as النشطة,
-                    SUM(CASE WHEN p.status = 'completed' THEN 1 ELSE 0 END)                              as المكتملة,
-                    SUM(CASE WHEN p.status = 'on_hold'   THEN 1 ELSE 0 END)                              as المتوقفة
+                    COUNT(*) as إجمالي_المشاريع,
+                    SUM(CASE WHEN p.status = 'active'    THEN 1 ELSE 0 END) as النشطة,
+                    SUM(CASE WHEN p.status = 'completed' THEN 1 ELSE 0 END) as المكتملة,
+                    SUM(CASE WHEN p.status = 'on_hold'   THEN 1 ELSE 0 END) as المتوقفة
                 FROM projects p
                 INNER JOIN project_user pu ON pu.project_id = p.id
-                WHERE pu.user_id = :user_id
-                  AND p.deleted_at IS NULL
+                WHERE pu.user_id = :uid AND p.deleted_at IS NULL
             ",
         ],
     ];
@@ -314,9 +296,21 @@ class AIService
             return 'يجب تسجيل الدخول أولاً.';
         }
 
-        // طلب الإحصائيات مباشرة بدون Gemini
-        if (in_array(trim($userMessage), ['__stats__'])) {
-            return $this->executeQueryById('my_stats', $userId);
+        // 1️⃣ الأوامر المباشرة
+        if (trim($userMessage) === '__stats__') {
+            return $this->executeQuery('my_stats', $userId);
+        }
+
+        // 2️⃣ Local keyword matching — سريع وموثوق
+        $localMatch = $this->matchLocally($userMessage);
+        if ($localMatch) {
+            Log::info("AI local match [{$localMatch}] for: {$userMessage}");
+            return $this->executeQuery($localMatch, $userId);
+        }
+
+        // 3️⃣ Gemini فقط للأسئلة التي لا يغطيها الـ local matching
+        if (empty($this->apiKey)) {
+            return 'لم أفهم طلبك. جرّب: "مهامي" أو "مشاريعي" أو "إحصائياتي".';
         }
 
         $prompt = $this->buildPrompt($userMessage);
@@ -331,7 +325,7 @@ class AIService
         }
 
         if (preg_match('/QUERY_ID:\s*(\w+)/i', $reply, $match)) {
-            return $this->executeQueryById(trim($match[1]), $userId);
+            return $this->executeQuery(trim($match[1]), $userId);
         }
 
         if (preg_match('/NONE:\s*(.+)/is', $reply, $match)) {
@@ -342,26 +336,136 @@ class AIService
     }
 
     // ─────────────────────────────────────────────────────────────
-    // PRIVATE — Query Logic
+    // PRIVATE — Local Matching
     // ─────────────────────────────────────────────────────────────
 
-    private function executeQueryById(string $queryId, int $userId): string
+    /**
+     * Intent matching using signal-based rules.
+     *
+     * كل rule تحتوي على:
+     *   [0] query_id
+     *   [1] required_signals  — يجب أن يكون واحد على الأقل موجوداً
+     *   [2] context_signals   — إذا كانت فارغة = يكفي required فقط
+     *                           إذا كانت ممتلئة = يجب واحد منها أيضاً
+     *
+     * الترتيب في $intentRules من الأكثر تحديداً للأعم.
+     */
+    /**
+     * تطبيع النص العربي لتوحيد الكتابة قبل المطابقة.
+     */
+    private function normalize(string $text): string
     {
-        $query = null;
-        foreach ($this->queryLibrary as $q) {
-            if ($q['id'] === $queryId) {
-                $query = $q;
-                break;
-            }
+        $text = mb_strtolower(trim($text));
+        // توحيد الهمزات والألف
+        $text = str_replace(['أ','إ','آ'], 'ا', $text);
+        // توحيد التاء المربوطة
+        $text = str_replace('ة', 'ه', $text);
+        // توحيد الألف المقصورة
+        $text = str_replace('ى', 'ي', $text);
+        return $text;
+    }
+
+    /**
+     * Intent matching — يفحص من الأكثر تحديداً للأعم.
+     *
+     * المنطق الجديد:
+     * 1. نطبّع الرسالة أولاً
+     * 2. نفحص الكلمات الحاسمة (specific_signals) أولاً — إذا وُجدت تحدد النوع فوراً
+     * 3. ثم نفحص الموضوع (topic: مهام أم مشاريع)
+     * 4. أخيراً نعود للـ general query
+     */
+    private function matchLocally(string $message): ?string
+    {
+        $msg = $this->normalize($message);
+
+        $hasTasks    = str_contains($msg, 'مهام') || str_contains($msg, 'مهمه')
+                    || str_contains($msg, 'task');
+        $hasProjects = str_contains($msg, 'مشاريع') || str_contains($msg, 'مشروع')
+                    || str_contains($msg, 'project');
+
+        // ── إحصائيات عامة ─────────────────────────────────────────
+        foreach (['احصائيات','ملخص','نظره عامه','داشبورد','dashboard','وضعي','تقريري'] as $kw) {
+            if (str_contains($msg, $this->normalize($kw))) return 'my_stats';
         }
+
+        // ── كلمات حاسمة تحدد النوع فوراً (بغض النظر عن topic) ──────
+        $specificSignals = [
+            // متأخرة → overdue
+            'متاخر'         => ['tasks' => 'my_tasks_overdue', 'projects' => null],
+            'overdue'       => ['tasks' => 'my_tasks_overdue', 'projects' => null],
+            'فات وقت'       => ['tasks' => 'my_tasks_overdue', 'projects' => null],
+            'فاتت'          => ['tasks' => 'my_tasks_overdue', 'projects' => null],
+
+            // مكتملة / منتهية → completed
+            'منتهيه'        => ['tasks' => 'my_tasks_completed', 'projects' => 'my_projects_completed'],
+            'مكتمله'        => ['tasks' => 'my_tasks_completed', 'projects' => 'my_projects_completed'],
+            'منجزه'         => ['tasks' => 'my_tasks_completed', 'projects' => null],
+            'خلصت'          => ['tasks' => 'my_tasks_completed', 'projects' => 'my_projects_completed'],
+            'انتهيت منها'   => ['tasks' => 'my_tasks_completed', 'projects' => 'my_projects_completed'],
+            'completed'     => ['tasks' => 'my_tasks_completed', 'projects' => 'my_projects_completed'],
+
+            // لم تبدأ / معلقة → pending
+            'لم تبدا'       => ['tasks' => 'my_tasks_pending', 'projects' => null],
+            'لم ابدا'       => ['tasks' => 'my_tasks_pending', 'projects' => null],
+            'ما بدات'       => ['tasks' => 'my_tasks_pending', 'projects' => null],
+            'معلقه'         => ['tasks' => 'my_tasks_pending', 'projects' => null],
+            'غير مكتمله'   => ['tasks' => 'my_tasks_pending', 'projects' => null],
+            'pending'       => ['tasks' => 'my_tasks_pending', 'projects' => null],
+
+            // جارية / نشطة → active
+            'جاريه'         => ['tasks' => 'my_tasks_active', 'projects' => 'my_projects_active'],
+            'قيد التنفيذ'  => ['tasks' => 'my_tasks_active', 'projects' => null],
+            'نشطه'          => ['tasks' => 'my_tasks_active', 'projects' => 'my_projects_active'],
+            'الان'          => ['tasks' => 'my_tasks_active', 'projects' => 'my_projects_active'],
+            'in progress'   => ['tasks' => 'my_tasks_active', 'projects' => null],
+            'active'        => ['tasks' => 'my_tasks_active', 'projects' => 'my_projects_active'],
+
+            // قريبة الانتهاء → due_soon
+            'قريبه'         => ['tasks' => 'my_tasks_due_soon', 'projects' => null],
+            'هذا الاسبوع'  => ['tasks' => 'my_tasks_due_soon', 'projects' => null],
+            'عاجله'         => ['tasks' => 'my_tasks_due_soon', 'projects' => null],
+            'due soon'      => ['tasks' => 'my_tasks_due_soon', 'projects' => null],
+
+            // عدد / كم → count
+            'كم'            => ['tasks' => 'my_tasks_count', 'projects' => 'my_projects_count'],
+            'عدد'           => ['tasks' => 'my_tasks_count', 'projects' => 'my_projects_count'],
+            'احصاء'         => ['tasks' => 'my_tasks_count', 'projects' => 'my_projects_count'],
+            'how many'      => ['tasks' => 'my_tasks_count', 'projects' => 'my_projects_count'],
+        ];
+
+        foreach ($specificSignals as $signal => $map) {
+            if (!str_contains($msg, $this->normalize($signal))) continue;
+
+            // حُدّد النوع — الآن نحدد هل مهام أم مشاريع
+            if ($hasProjects && $map['projects']) return $map['projects'];
+            if ($hasTasks    && $map['tasks'])    return $map['tasks'];
+
+            // إذا لم يُذكر الموضوع لكن الإشارة واضحة للمهام
+            if ($map['tasks'] && !$hasProjects) return $map['tasks'];
+        }
+
+        // ── General queries (بعد استبعاد جميع الـ specific) ──────────
+        if ($hasProjects) return 'my_projects';
+        if ($hasTasks)    return 'my_tasks';
+
+        return null;
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // PRIVATE — Query Execution
+    // ─────────────────────────────────────────────────────────────
+
+    private function executeQuery(string $queryId, int $userId): string
+    {
+        $query = collect($this->queryLibrary)->firstWhere('id', $queryId);
 
         if (!$query) {
             Log::warning("AI: unknown query_id [{$queryId}]");
             return 'لم أفهم طلبك. حاول بصياغة مختلفة.';
         }
 
-        // استبدال كل :user_id بالـ ID الحقيقي
-        $sql = str_replace(':user_id', (int) $userId, trim($query['sql']));
+        // استبدال :uid بـ ID المستخدم مباشرة (int — آمن من SQL injection)
+        $sql = str_replace(':uid', (int) $userId, trim($query['sql']));
         $sql = preg_replace('/\s+/', ' ', $sql);
 
         Log::info("AI executing [{$queryId}] for user [{$userId}]");
@@ -370,15 +474,12 @@ class AIService
             $results = DB::select($sql);
 
             if (empty($results)) {
-                return 'لا توجد نتائج.';
+                return $this->emptyMessage($queryId);
             }
 
-            // الإحصائيات تُعرض بشكل مختلف
-            if ($queryId === 'my_stats') {
-                return $this->formatStats($results[0]);
-            }
-
-            return $this->formatResults($results);
+            return $queryId === 'my_stats'
+                ? $this->formatStats($results[0])
+                : $this->formatResults($results);
 
         } catch (\Exception $e) {
             Log::error("AI SQL error [{$queryId}]: " . $e->getMessage());
@@ -386,29 +487,35 @@ class AIService
         }
     }
 
+    private function emptyMessage(string $queryId): string
+    {
+        return match(true) {
+            str_contains($queryId, 'overdue')   => '✅ ممتاز! لا توجد مهام متأخرة.',
+            str_contains($queryId, 'due_soon')  => '✅ لا توجد مهام ستنتهي قريبًا.',
+            str_contains($queryId, 'completed') => 'لا توجد مهام مكتملة بعد.',
+            str_contains($queryId, 'tasks')     => 'لا توجد مهام.',
+            str_contains($queryId, 'projects')  => 'لا توجد مشاريع.',
+            default                             => 'لا توجد نتائج.',
+        };
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // PRIVATE — Gemini Prompt
+    // ─────────────────────────────────────────────────────────────
+
     private function buildPrompt(string $userMessage): string
     {
-        $queryList = '';
-        foreach ($this->queryLibrary as $q) {
-            $queryList .= "- {$q['id']}: {$q['description']}\n";
-        }
+        $ids = implode(', ', array_column($this->queryLibrary, 'id'));
 
         return <<<PROMPT
-أنت مساعد لإدارة المهام والمشاريع.
+أنت مساعد لإدارة المهام. الاستعلامات المتاحة: {$ids}
 
-الاستعلامات المتاحة:
-{$queryList}
+قواعد الرد (التزم بها حرفياً):
+- إذا ناسب السؤال استعلامًا: أجب فقط بـ QUERY_ID: [id]
+- إذا كان السؤال عامًا: أجب فقط بـ NONE: [إجابة قصيرة]
+- لا تكتب أي شيء آخر
 
-تعليمات الرد (التزم بها حرفياً):
-1. إذا ناسب السؤال أحد الاستعلامات، أجب فقط بـ:
-   QUERY_ID: [id الاستعلام]
-
-2. إذا كان السؤال عامًا، أجب فقط بـ:
-   NONE: [إجابتك]
-
-3. لا تكتب أي شيء آخر
-
-سؤال المستخدم: {$userMessage}
+سؤال: {$userMessage}
 PROMPT;
     }
 
@@ -418,71 +525,57 @@ PROMPT;
 
     private function formatStats(object $row): string
     {
-        $data = (array) $row;
+        $d = (array) $row;
 
-        $totalTasks     = $data['total_tasks']        ?? 0;
-        $completedTasks = $data['completed_tasks']    ?? 0;
-        $pendingTasks   = $data['pending_tasks']      ?? 0;
-        $overdueTasks   = $data['overdue_tasks']      ?? 0;
-        $dueThisWeek    = $data['due_this_week']      ?? 0;
-        $totalProjects  = $data['total_projects']     ?? 0;
-        $completedProj  = $data['completed_projects'] ?? 0;
-        $activeProj     = $data['active_projects']    ?? 0;
+        $total     = $d['total_tasks']        ?? 0;
+        $completed = $d['completed_tasks']    ?? 0;
+        $pending   = $d['pending_tasks']      ?? 0;
+        $overdue   = $d['overdue_tasks']      ?? 0;
+        $week      = $d['due_this_week']      ?? 0;
+        $projects  = $d['total_projects']     ?? 0;
+        $projDone  = $d['completed_projects'] ?? 0;
+        $projActive= $d['active_projects']    ?? 0;
 
-        $taskPercent = $totalTasks > 0
-            ? round(($completedTasks / $totalTasks) * 100)
-            : 0;
+        $pct = $total > 0 ? round(($completed / $total) * 100) : 0;
 
         return "📊 **إحصائياتك**\n\n" .
-               "━━━━━━━━━━━━━━━━━━\n" .
                "📋 **المهام**\n" .
-               "• الإجمالي: {$totalTasks} مهمة\n" .
-               "• ✅ المكتملة: {$completedTasks}\n" .
-               "• 🕐 غير المكتملة: {$pendingTasks}\n" .
-               "• ⚠️ المتأخرة: {$overdueTasks}\n" .
-               "• ⏳ تنتهي هذا الأسبوع: {$dueThisWeek}\n" .
-               "• 📈 نسبة الإنجاز: {$taskPercent}%\n\n" .
-               "━━━━━━━━━━━━━━━━━━\n" .
+               "• الإجمالي: {$total}\n" .
+               "• ✅ مكتملة: {$completed}\n" .
+               "• 🕐 غير مكتملة: {$pending}\n" .
+               "• ⚠️ متأخرة: {$overdue}\n" .
+               "• ⏳ تنتهي هذا الأسبوع: {$week}\n" .
+               "• 📈 نسبة الإنجاز: {$pct}%\n\n" .
                "🗂️ **المشاريع**\n" .
-               "• الإجمالي: {$totalProjects} مشروع\n" .
-               "• 🟢 النشطة: {$activeProj}\n" .
-               "• ✅ المكتملة: {$completedProj}\n" .
-               ($overdueTasks > 0
-                   ? "\n⚠️ تنبيه: لديك {$overdueTasks} مهمة متأخرة!"
-                   : "\n✅ أحسنت! لا توجد مهام متأخرة.");
+               "• الإجمالي: {$projects}\n" .
+               "• 🟢 نشطة: {$projActive}\n" .
+               "• ✅ مكتملة: {$projDone}\n" .
+               ($overdue > 0 ? "\n⚠️ لديك {$overdue} مهمة متأخرة!" : "\n✅ لا توجد مهام متأخرة.");
     }
 
     private function formatResults(array $results): string
     {
-        $count  = count($results);
-        $first  = (array) $results[0];
-        $keys   = array_keys($first);
+        $count = count($results);
+        $keys  = array_keys((array) $results[0]);
+        $sep   = str_repeat('─', 40);
 
-        // ترويسة الجدول
-        $header = implode(' | ', array_map(fn($k) => str_replace('_', ' ', $k), $keys));
-        $sep    = str_repeat('─', min(strlen($header), 60));
-
-        $output = "📋 **{$count} نتيجة**\n{$sep}\n";
+        $out = "📋 **{$count} نتيجة**\n{$sep}\n";
 
         foreach ($results as $i => $row) {
-            $row   = (array) $row;
-            $num   = $i + 1;
-            $name  = $row[$keys[0]] ?? '';
+            $row  = (array) $row;
+            $name = $row[$keys[0]] ?? '';
+            $out .= "\n" . ($i + 1) . ". **{$name}**\n";
 
-            // السطر الأول: الرقم + الاسم بارز
-            $output .= "\n{$num}. **{$name}**\n";
-
-            // باقي التفاصيل
             foreach (array_slice($keys, 1) as $key) {
                 $val = $row[$key] ?? null;
-                if (!is_null($val) && $val !== '') {
-                    $label   = str_replace('_', ' ', $key);
-                    $output .= "   • {$label}: {$val}\n";
+                if ($val !== null && $val !== '') {
+                    $label = str_replace('_', ' ', $key);
+                    $out  .= "   • {$label}: {$val}\n";
                 }
             }
         }
 
-        return $output;
+        return $out;
     }
 
     // ─────────────────────────────────────────────────────────────
@@ -500,43 +593,27 @@ PROMPT;
                     ['role' => 'user', 'parts' => [['text' => $prompt]]]
                 ],
                 'generationConfig' => [
-                    'maxOutputTokens' => 60,
-                    'temperature'     => 0.1,
+                    'maxOutputTokens' => 30,   // QUERY_ID: my_tasks = ~15 token فقط
+                    'temperature'     => 0.0,  // صفر = حتمي تماماً
                 ],
             ]);
 
-            Log::info("Gemini [{$model}] status: " . $response->status());
-
             if ($response->status() === 429) {
-                if (!$useFallback) return $this->callGemini($prompt, true);
-                return '__ERROR__:تم تجاوز الحد المجاني. حاول لاحقًا.';
+                return $useFallback
+                    ? '__ERROR__:تم تجاوز الحد المجاني. حاول بعد دقائق.'
+                    : $this->callGemini($prompt, true);
             }
 
             if (!$response->successful()) {
-                $code = $response->status();
-
-                // 503 / 502 / 529 → جرّب الموديل الثاني أولاً
-                if (in_array($code, [502, 503, 529]) && !$useFallback) {
-                    Log::warning("Gemini [{$model}] {$code}, retrying with fallback...");
+                if (in_array($response->status(), [502, 503, 529]) && !$useFallback) {
                     sleep(1);
                     return $this->callGemini($prompt, true);
                 }
-
-                $errCode = $response->json('error.code');
-                return match($errCode) {
-                    403 => '__ERROR__:مفتاح API غير صالح.',
-                    default => '__ERROR__:خدمة Gemini غير متاحة مؤقتًا. حاول بعد لحظات.',
-                };
+                return '__ERROR__:خدمة Gemini غير متاحة مؤقتًا.';
             }
 
             $text = $response->json('candidates.0.content.parts.0.text');
-
-            if (empty($text)) {
-                Log::warning("Gemini empty: " . $response->body());
-                return null;
-            }
-
-            return trim($text);
+            return empty($text) ? null : trim($text);
 
         } catch (\Illuminate\Http\Client\ConnectionException $e) {
             Log::error('Gemini connection: ' . $e->getMessage());
