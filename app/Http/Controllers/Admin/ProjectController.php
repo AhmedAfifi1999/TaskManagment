@@ -5,43 +5,43 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Project;
 use App\Models\User;
+use App\Notifications\ProjectStatusChangedNotification;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Notification;
 
 class ProjectController extends Controller
 {
     //
     use AuthorizesRequests;
 
-   
     public function index()
-{
-    $this->authorize('viewAny', Project::class);
+    {
+        $this->authorize('viewAny', Project::class);
 
-    $user = auth()->user();
+        $user = auth()->user();
 
-    $query = Project::with('creator')->latest();
+        $query = Project::with('creator')->latest();
 
-    // إذا كان لديه صلاحية عرض جميع المشاريع
-    if ($user->can('view projects')) {
-       $projects = $query->paginate(15);
+        // إذا كان لديه صلاحية عرض جميع المشاريع
+        if ($user->can('view projects')) {
+            $projects = $query->paginate(15);
 
-    } else {
+        } else {
 
-        // يرى المشاريع التي أنشأها أو التي هو عضو في فريقها
-        $projects = $query
-            ->where(function ($q) use ($user) {
-                $q->where('user_id', $user->id)
-                  ->orWhereHas('team', function ($team) use ($user) {
-                      $team->where('user_id', $user->id);
-                  });
-            })
-            ->paginate(15);
+            // يرى المشاريع التي أنشأها أو التي هو عضو في فريقها
+            $projects = $query
+                ->where(function ($q) use ($user) {
+                    $q->where('user_id', $user->id)
+                        ->orWhereHas('team', function ($team) use ($user) {
+                            $team->where('user_id', $user->id);
+                        });
+                })
+                ->paginate(15);
+        }
+
+        return view('admin.projects.index', compact('projects'));
     }
-
-    return view('admin.projects.index', compact('projects'));
-}
-   
 
     public function create()
     {
@@ -126,6 +126,7 @@ class ProjectController extends Controller
                 $validated['attachment'] = $request->file('attachment')
                     ->store('projects/attachments', 'public');
             }
+            $oldStatus = $project->status;
 
             // تحديث البيانات بدون لمس attachment لو لم يتم رفع ملف
             $project->update([
@@ -141,6 +142,30 @@ class ProjectController extends Controller
             ]);
 
             $project->team()->sync($validated['team']);
+            if ($oldStatus !== $project->status) {
+
+                $recipients = $project->team;
+
+                // إضافة مالك المشروع
+                $recipients->push($project->user);
+
+                // إزالة التكرار
+                $recipients = $recipients->unique('id');
+
+                // عدم إرسال الإشعار لمن قام بالتحديث
+                $recipients = $recipients->reject(function ($user) {
+                    return $user->id === auth()->id();
+                });
+
+                Notification::send(
+                    $recipients,
+                    new ProjectStatusChangedNotification(
+                        $project,
+                        auth()->user(),
+                        $project->status
+                    )
+                );
+            }
 
             return redirect()->route('admin.projects.index')
                 ->with('success', 'تم تحديث المشروع بنجاح');
@@ -148,7 +173,8 @@ class ProjectController extends Controller
 
         abort(403, 'غير مصرح لك بتعديل هذا المشروع');
     }
-   public function edit($id)
+
+    public function edit($id)
     {
         $project = Project::findOrFail($id);
 
@@ -159,8 +185,6 @@ class ProjectController extends Controller
 
         return view('admin.projects.edit', compact('project', 'users', 'selectedTeam'));
     }
-
- 
 
     public function destroy(Project $project)
     {

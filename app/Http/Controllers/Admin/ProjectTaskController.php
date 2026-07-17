@@ -7,10 +7,10 @@ use App\Models\Project;
 use App\Models\Task;
 use App\Models\User;
 use App\Notifications\TaskAssignedNotification;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use App\Notifications\TaskStatusChangedNotification;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class ProjectTaskController extends Controller
 {
@@ -198,6 +198,8 @@ class ProjectTaskController extends Controller
                 ->withErrors(['user_id' => 'لا يمكن تعيين المهمة لهذا المستخدم'])
                 ->withInput();
         }
+        $oldStatus = $task->status;
+        $oldUserId = $task->user_id;
 
         // تحديث المهمة
         $task->update([
@@ -209,6 +211,18 @@ class ProjectTaskController extends Controller
             'end_time' => $validated['end_time'],
             'user_id' => $validated['user_id'],
         ]);
+
+        if ($oldStatus !== $task->status) {
+            $task->user->notify(
+                new TaskStatusChangedNotification($task, auth()->user())
+            );
+        }
+
+        if ($oldUserId != $task->user_id) {
+            $task->user->notify(
+                new TaskAssignedNotification($task, auth()->user())
+            );
+        }
 
         return redirect()->route('admin.projects.tasks.index', $projectId)
             ->with('success', 'تم تحديث المهمة بنجاح');

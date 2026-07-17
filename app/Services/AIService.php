@@ -197,7 +197,48 @@ class AIService
                     DATE_FORMAT(updated_at, '%Y-%m-%d') as تاريخ_الإنجاز,
                     CASE priority WHEN 'high' THEN '🔴 عالية' WHEN 'medium' THEN '🟡 متوسطة' ELSE '🟢 منخفضة' END as الأولوية
                 FROM tasks WHERE user_id = :uid AND is_completed = 1 AND deleted_at IS NULL
-                ORDER BY updated_at DESC LIMIT 20
+                ORDER BY updated_at DESC LIMIT 100
+            ",
+        ],
+
+        // ─── مهام المستخدم في مشروع معين (يستخدم :project_name) ──
+        [
+            'id'  => 'my_tasks_in_project',
+            'sql' => "
+                SELECT
+                    t.name as المهمه,
+                    CASE t.status
+                        WHEN 'pending'     THEN '🕐 معلقه'
+                        WHEN 'in_progress' THEN '⚙️ جاريه'
+                        WHEN 'completed'   THEN '✅ مكتمله'
+                        ELSE t.status
+                    END as الحاله,
+                    CASE t.priority
+                        WHEN 'high'   THEN '🔴 عاليه'
+                        WHEN 'medium' THEN '🟡 متوسطه'
+                        WHEN 'low'    THEN '🟢 منخفضه'
+                        ELSE t.priority
+                    END as الاولويه,
+                    DATE_FORMAT(t.end_time, '%Y-%m-%d') as تاريخ_الانتهاء,
+                    CASE
+                        WHEN t.end_time IS NULL       THEN '—'
+                        WHEN t.is_completed = 1       THEN '✅ منجزه'
+                        WHEN t.end_time < NOW()       THEN CONCAT('⚠️ متاخره ', DATEDIFF(NOW(), t.end_time), ' يوم')
+                        ELSE CONCAT('⏳ باقي ', DATEDIFF(t.end_time, NOW()), ' يوم')
+                    END as الوضع,
+                    p.name as المشروع
+                FROM tasks t
+                INNER JOIN projects p ON p.id = t.project
+                INNER JOIN project_user pu ON pu.project_id = p.id
+                WHERE t.user_id = :uid
+                  AND pu.user_id = :uid
+                  AND p.name LIKE :project_name
+                  AND t.deleted_at IS NULL
+                  AND p.deleted_at IS NULL
+                ORDER BY
+                    CASE WHEN t.end_time < NOW() AND t.is_completed = 0 THEN 0 ELSE 1 END,
+                    t.end_time ASC
+                LIMIT 50
             ",
         ],
         [
@@ -301,7 +342,14 @@ class AIService
             return $this->executeQuery('my_stats', $userId);
         }
 
-        // 2️⃣ Local keyword matching — سريع وموثوق
+        // 2️⃣ مهام في مشروع معين — يُفحص قبل الـ local matching العام
+        $projectName = $this->extractProjectName($userMessage);
+        if ($projectName !== null) {
+            Log::info("AI tasks_in_project [{$projectName}] for user [{$userId}]");
+            return $this->executeTasksInProject($projectName, $userId);
+        }
+
+        // 3️⃣ Local keyword matching — سريع وموثوق
         $localMatch = $this->matchLocally($userMessage);
         if ($localMatch) {
             Log::info("AI local match [{$localMatch}] for: {$userMessage}");
@@ -350,6 +398,102 @@ class AIService
      *
      * الترتيب في $intentRules من الأكثر تحديداً للأعم.
      */
+    // ─────────────────────────────────────────────────────────────
+    // PRIVATE — Project Name Extraction
+    // ─────────────────────────────────────────────────────────────
+
+    /**
+     * يستخرج اسم المشروع من رسائل مثل:
+     *   "مهامي في مشروع تطوير الموقع"
+     *   "اعرض مهامي الخاصة بمشروع X"
+     *   "مهامي في مشروع: تطوير"
+     *
+     * يُرجع null إذا لم يجد نمط مشروع.
+     */
+    private function extractProjectName(string $message): ?string
+    {
+        // أنماط البحث — مرتبة من الأكثر تحديداً للأعم
+        $patterns = [
+            // "مهامي في مشروع تطوير الموقع" أو "مهامي في مشروع X"
+            '/(?:مهام[يه]?|tasks?).*?(?:في|بـ?|ب)\s+مشروع\s*[:\s]\s*(\S+(?:\s+\S+)*)/ui',
+            // "مهامي الخاصة بمشروع نظام الإدارة"
+            '/(?:مهام[يه]?|tasks?).*?بمشروع\s*[:\s]?\s*(\S+(?:\s+\S+)*)/ui',
+            // "مهامي ضمن مشروع التسويق"
+            '/(?:مهام[يه]?|tasks?).*?(?:ضمن|داخل)\s+مشروع\s*[:\s]?\s*(\S+(?:\s+\S+)*)/ui',
+            // "مشروع X مهامي" — عكس الترتيب
+            '/مشروع\s*[:\s]\s*(\S+(?:\s+\S+)?)\s+(?:مهام[يه]?|tasks?)/ui',
+        ];
+
+        foreach ($patterns as $pattern) {
+            if (preg_match($pattern, $message, $matches)) {
+                $name = trim($matches[1]);
+                // حذف كلمات trailing غير مرغوبة
+                $name = preg_replace('/\s*(اعرض|عرض|كل|جميع|الخاصه|الخاصة)$/ui', '', $name);
+                $name = trim($name);
+                if (mb_strlen($name) >= 2) {
+                    return $name;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * تنفيذ استعلام المهام في مشروع معين مع LIKE search على اسم المشروع.
+     */
+    private function executeTasksInProject(string $projectName, int $userId): string
+    {
+        $query = collect($this->queryLibrary)->firstWhere('id', 'my_tasks_in_project');
+
+        if (!$query) {
+            return 'خطأ داخلي: query غير موجودة.';
+        }
+
+        // بناء SQL مع LIKE — آمن لأن القيم تُمرَّر كـ bindings لا string replacement
+        $sql = str_replace(':uid', (int) $userId, trim($query['sql']));
+        $sql = preg_replace('/\s+/', ' ', $sql);
+
+        Log::info("AI tasks_in_project SQL for [{$projectName}] user [{$userId}]");
+
+        try {
+            // استخدام PDO binding لـ :project_name لحماية من SQL injection
+            $results = DB::select(
+                str_replace(':project_name', '?', $sql),
+                ['%' . $projectName . '%']
+            );
+
+            if (empty($results)) {
+                return "لم أجد مهاماً في مشروع يحتوي على \"**{$projectName}**\".\n"
+                     . "تحقق من اسم المشروع أو جرّب جزءاً منه فقط.";
+            }
+
+            $count    = count($results);
+            $projName = $results[0]->المشروع ?? $projectName;
+
+            $out = "📋 **{$count} مهمة في مشروع «{$projName}»**\n" . str_repeat('─', 40) . "\n";
+
+            foreach ($results as $i => $row) {
+                $row  = (array) $row;
+                $name = $row['المهمه'] ?? '';
+                $out .= "\n" . ($i + 1) . ". **{$name}**\n";
+                foreach (['الحاله','الاولويه','تاريخ_الانتهاء','الوضع'] as $col) {
+                    $val = $row[$col] ?? null;
+                    if ($val && $val !== '—') {
+                        $label = str_replace('_', ' ', $col);
+                        $out  .= "   • {$label}: {$val}\n";
+                    }
+                }
+            }
+
+            return $out;
+
+        } catch (\Exception $e) {
+            Log::error("AI tasks_in_project error: " . $e->getMessage());
+            return 'حدث خطأ في جلب المهام. تحقق من اسم المشروع.';
+        }
+    }
+
     /**
      * تطبيع النص العربي لتوحيد الكتابة قبل المطابقة.
      */

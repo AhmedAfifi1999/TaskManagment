@@ -1,4 +1,5 @@
 <?php
+
 use App\Http\Controllers\Admin\AIChatController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\ProjectController;
@@ -11,8 +12,9 @@ use App\Http\Controllers\HomeController;
 use App\Http\Controllers\ProjectsController;
 use App\Http\Controllers\TasksController;
 use App\Http\Controllers\Website\MainController;
-use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Admin\NotificationController;
 
 // Route::get('/', [HomeController::class, 'index'])->name('home.index');
 
@@ -27,7 +29,7 @@ Route::prefix('admin')->name('admin.')->middleware('auth')->group(function () {
     Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
 
     Route::get('/management', [HomeController::class, 'index'])->name('management');
-        Route::get('/manage', [HomeController::class, 'manage'])->name('manage');
+    Route::get('/manage', [HomeController::class, 'manage'])->name('manage');
 
     Route::post('/ai/chat', [AIChatController::class, 'chat']);
     Route::get('/notifications/read/{id}', function ($id) {
@@ -92,7 +94,24 @@ Route::prefix('admin')->name('admin.')->middleware('auth')->group(function () {
             Route::put('{role}', [RoleController::class, 'update'])->name('update');  // تعديل الدور
             Route::delete('{role}', [RoleController::class, 'destroy'])->name('destroy'); // حذف الدور
         });
+Route::prefix('notifications')
+    ->name('notifications.')
+    ->group(function () {
 
+        Route::get('/', [NotificationController::class, 'index'])
+            ->name('index');
+
+        Route::get('/{notification}', [NotificationController::class, 'show'])
+            ->name('show');
+
+        Route::post('/mark-all-read', [NotificationController::class, 'markAllAsRead'])
+            ->name('markAllAsRead');
+
+        Route::delete('/{notification}', [NotificationController::class, 'destroy'])
+            ->name('destroy');
+            Route::post('/read/{notification}', [NotificationController::class, 'markAsRead'])
+    ->name('notifications.read');
+    });
 });
 
 // PROJECTS ROUTES
@@ -112,6 +131,7 @@ Route::prefix('tasks')->group(function () {
     Route::post('update-priority', [TasksController::class, 'updatePriority'])->name('tasks.updatePriority');
 });
 
+
 Route::get('/secure-image/{path}', function ($path) {
 
     abort_unless(Auth::check(), 401);
@@ -125,12 +145,12 @@ Route::get('/secure-image/{path}', function ($path) {
         abort_unless($user->image === $path, 403);
     }
 
-    $fullPath = storage_path('app/public/' . $path);
+    $fullPath = storage_path('app/public/'.$path);
 
     abort_unless(file_exists($fullPath), 404);
 
     return response()->file($fullPath);
 
 })->where('path', '.*')
-  ->middleware('auth')
-  ->name('secure.image');
+    ->middleware('auth')
+    ->name('secure.image');
