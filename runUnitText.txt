@@ -1,0 +1,6 @@
+//command To run Unit test
+php artisan test --filter=TaskTest
+
+php artisan test --filter=UserTest
+
+php artisan test --filter=ProjectTest

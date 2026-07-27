@@ -254,8 +254,8 @@
                     </li>
                     <li class="border-top">
                         <div class="d-grid p-4">
-                            <a class="btn btn-primary btn-sm d-flex" href="javascript:void(0);">
-                                <small class="align-middle">عرض حنيع الاشعارات</small>
+                            <a class="btn btn-primary btn-sm d-flex" href="{{ route('admin.notifications.index') }}">
+                                <small class="align-middle">عرض جميع الاشعارات</small>
                             </a>
                         </div>
                     </li>
@@ -267,18 +267,17 @@
             <li class="nav-item navbar-dropdown dropdown-user dropdown">
                 <a class="nav-link dropdown-toggle hide-arrow p-0" href="javascript:void(0);" data-bs-toggle="dropdown">
                     <div class="avatar avatar-online">
-                                        @auth
-                                            @if (auth()->user()->image)
-                                                <img src="{{ route('secure.image', ['path' => auth()->user()->image]) }}"
-                                                    alt="صورة المستخدم" class="rounded-circle" />
-                                            @else
-                                                <img src="{{ asset('cp/assets/img/avatars/1.png') }}" alt="صورة افتراضية"
-                                                    class="rounded-circle" />
-                                            @endif
-                                        @else
-                                            <img src="{{ asset('cp/assets/img/avatars/1.png') }}" alt="زائر"
-                                                class="rounded-circle" />
-                                        @endauth
+                        @auth
+                            @if (auth()->user()->image)
+                                <img src="{{ route('secure.image', ['path' => auth()->user()->image]) }}"
+                                    alt="صورة المستخدم" class="rounded-circle" />
+                            @else
+                                <img src="{{ asset('cp/assets/img/avatars/1.png') }}" alt="صورة افتراضية"
+                                    class="rounded-circle" />
+                            @endif
+                        @else
+                            <img src="{{ asset('cp/assets/img/avatars/1.png') }}" alt="زائر" class="rounded-circle" />
+                        @endauth
                     </div>
                 </a>
                 <ul class="dropdown-menu dropdown-menu-end">
@@ -376,9 +375,9 @@
     </div>
 
     <!-- Search Small Screens -->
-    <div class="navbar-search-wrapper search-input-wrapper d-none">
+    {{-- <div class="navbar-search-wrapper search-input-wrapper d-none">
         <input type="text" class="form-control search-input container-xxl border-0" placeholder="Search..."
             aria-label="Search..." />
         <i class="ti ti-x search-toggler cursor-pointer"></i>
-    </div>
+    </div> --}}
 </nav>
