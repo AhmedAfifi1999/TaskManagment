@@ -60,15 +60,19 @@
 
                                         <td>
                                             <div class="d-flex align-items-center">
-                                                @if ($task->user)
-                                                    <img src="{{ $task->user->image ? asset($task->user->image) : asset('cp/assets/img/avatars/1.png') }}"
-                                                        alt="Avatar" class="rounded-circle me-2" width="30"
-                                                        height="30">
-                                                    <span>{{ $task->user->name }}</span>
-                                                @else
-                                                    <span class="text-muted">No assigned user</span>
-                                                @endif
-                                            </div>
+@if ($task->user)
+    <img src="{{ $task->user->image 
+        ? route('secure.image', $task->user->image) 
+        : asset('cp/assets/img/avatars/1.png') }}"
+        alt="Avatar"
+        class="rounded-circle me-2"
+        width="30"
+        height="30">
+
+    <span>{{ $task->user->name }}</span>
+@else
+    <span class="text-muted">No assigned user</span>
+@endif                                            </div>
                                         </td>
 
                                         <td>
